@@ -123,11 +123,8 @@ wide_stack = load_stack(data_dir=data_dir, stack_type=StackType.WIDE)
 <!--  
 # To build and publish. 
 
-# 1, render as HTML.
-(.venv) hurricane:krijudato afraser$ quarto render ./622a1.qmd --to html 
-
-# make sure you're logged into rpubs and have published something so rsconnect is already configured and cached. 
-(.venv) hurricane:krijudato afraser$ Rscript -e "rsconnect::rpubsUpload('622 Project 1', '622a1.html', '622a1.qmd')"
+quarto render ./project1.qmd --to html 
+Rscript -e "rsconnect::rpubsUpload('622 Project 1', 'project1.html', 'project1..qmd')"
 
 $id
 [1] "https://api.rpubs.com/api/v1/document/1229195/1b9ef99cdcaf419ba3c51a101056d0ae"
@@ -170,7 +167,7 @@ display(HTML(img_html))
 
 ### Overview of the Dataset
 
-This dataset was scraped from ZipRecruiter using Selenium and Chromedriver. We collected several pages containing salary information by job title and state, such as a page for [data engineers](https://www.ziprecruiter.com/Salaries/What-Is-the-Average-DATA-Engineer-Salary-by-State). Additionally, we added state abbreviations and a salary tier column to provide more granular analysis.
+This dataset was scraped from ZipRecruiter using Selenium and Chromedriver. We collected several pages containing salary information by job title and state, such as a page for [data engineers](https://www.ziprecruiter.com/Salaries/What-Is-the-Average-DATA-Engineer-Salary-by-State){target="_blank"}. Additionally, we added state abbreviations and a salary tier column to provide more granular analysis.
 
 Though relatively small, the dataset is clean, standardized, and well-suited for both analysis and prediction. Its structure makes it an excellent candidate for regression-based algorithms such as Linear Regression or Random Forest, allowing us to predict salaries based on key features like job title and state.
 
