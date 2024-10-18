@@ -1,6 +1,6 @@
 ---
 title: "Project 1: Pay and our industry"
-author: "Team: I Love Lucie"
+author: "Team: I Love Lucy"
 date: "10 Oct 2024"
 output:
   html_document:
@@ -15,7 +15,6 @@ execute:
   message: false
   freeze: auto
 ---
-
 <style>
 .quarto-title-meta {
     display: flex;
@@ -101,7 +100,9 @@ img {
     margin-right: auto; /* Center image */
 }
 </style>
-
+<p style="text-align: center;">
+  [github](https://github.com/tonythor/data622) &nbsp; | &nbsp; [web presentation](https://rpubs.com/tonythor/data622-project1)
+</p>
 
 ```{python import_and_load, message=false, warning=false, echo=FALSE}
 import matplotlib.pyplot as plt
@@ -120,22 +121,7 @@ ziprecruiter = load_zip(data_dir = data_dir)
 wide_stack = load_stack(data_dir=data_dir, stack_type=StackType.WIDE)
 ```
 
-<!--  
-# To build and publish. 
 
-quarto render ./project1.qmd --to html 
-Rscript -e "rsconnect::rpubsUpload('622 Project 1', 'project1.html', 'project1..qmd')"
-
-$id
-[1] "https://api.rpubs.com/api/v1/document/1229195/1b9ef99cdcaf419ba3c51a101056d0ae"
-$continueUrl
-[1] "http://rpubs.com/publish/claim/1229195/a4db2923e69e43fb82a62a12c795d9e3"
-# Now go to the claim URL and claim it.
--->
-<p style="text-align: center;">
-  [github](https://github.com/tonythor/data622) |
-  [web presentation](https://rpubs.com/tonythor/data622-project1)
-</p>
 
 # Data Sets
 
