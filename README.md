@@ -7,7 +7,7 @@ October 2024
 
 
 
-[web presentation](https://rpubs.com/tonythor/data622-project1)
+[Project 1 Presentation](https://rpubs.com/tonythor/data622-project1)
 
 ```shell
 
