@@ -8,7 +8,7 @@ output:
     number_sections: true
     self_contained: true
 python: 
-  jupyter: krijudato
+  jupyter: data622
 execute:
 #  echo: false
   warning: false
@@ -115,12 +115,11 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.ticker as mticker
 from lussi.ziprecruiter import *
 from lussi.stackoverflow import * 
-
 data_dir = "622data_nogit"
 ziprecruiter = load_zip(data_dir = data_dir)
 wide_stack = load_stack(data_dir=data_dir, stack_type=StackType.WIDE)
-```
 
+```
 
 
 # Data Sets

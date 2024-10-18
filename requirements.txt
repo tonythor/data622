@@ -35,3 +35,4 @@ selenium
 beautifulsoup4
 geopandas
 seaborn
+statsmodels
