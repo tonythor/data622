@@ -132,6 +132,10 @@ $continueUrl
 [1] "http://rpubs.com/publish/claim/1229195/a4db2923e69e43fb82a62a12c795d9e3"
 # Now go to the claim URL and claim it.
 -->
+<p style="text-align: center;">
+  [github](https://github.com/tonythor/data622) |
+  [web presentation](https://rpubs.com/tonythor/data622-project1)
+</p>
 
 # Data Sets
 
