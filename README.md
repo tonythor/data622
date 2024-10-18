@@ -1,5 +1,7 @@
 # data622
-Team I Love Lucy, CUNY Data 622, October 2024
+Team: I Love Lucy
+Class: CUNY Data 622
+October 2024
 
 [web presentation](https://rpubs.com/tonythor/data622-project1)
 
