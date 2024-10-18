@@ -1,0 +1,249 @@
+---
+title: "Project 1: Pay and our industry"
+author: "Team: I Love Lucie"
+date: "10 Oct 2024"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    self_contained: true
+python: 
+  jupyter: krijudato
+execute:
+#  echo: false
+  warning: false
+  message: false
+  freeze: auto
+---
+
+<style>
+.quarto-title-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.quarto-title-meta-heading {
+    font-weight: bold;
+}
+
+.quarto-title-meta-contents {
+    margin-right: 20px;
+}
+
+body {
+    width: 900px; /* Lock the body width to 900px */
+    font-family: Arial, sans-serif;
+    margin: 0 auto; /* Center the body */
+    background-color: white; /* Set background to white */
+}
+
+/* Flexbox container for title and author */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px; /* Add space below the header */
+}
+
+.header-container h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+
+.header-container .meta-info {
+    text-align: right; /* Align the meta information (author, date) to the right */
+    font-size: 1.2em;
+    margin: 0;
+}
+
+h2, h3, h4, h5, h6 {
+    font-family: Arial, sans-serif;
+    margin: 0 0 10px 0; /* Reduce the bottom margin for more compact headers */
+    padding: 0; /* Remove padding */
+    line-height: 1.2; /* Control the line spacing */
+}
+
+/* Adjust table and image styles */
+table {
+    width: 100%; /* Make table full width within the 900px body */
+    border-collapse: collapse;
+    max-width: 100%;
+    margin-left: auto;  /* Center the table */
+    margin-right: auto; /* Center the table */
+    overflow-x: auto; /* Allow horizontal scrolling if the table is too wide */
+    display: block;
+}
+
+table, th, td {
+    border: 1px solid lightgray;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+/* Custom figure sizing */
+.figure {
+    width: 100%; /* Ensure figures take full width within the 900px body */
+    margin-left: auto;  /* Center figure */
+    margin-right: auto; /* Center figure */
+}
+
+img {
+    max-width: 100%;  /* Ensure images take full width within the 900px body */
+    height: auto;
+    display: block;
+    margin-left: auto;  /* Center image */
+    margin-right: auto; /* Center image */
+}
+</style>
+
+
+```{python import_and_load, message=false, warning=false, echo=FALSE}
+import matplotlib.pyplot as plt
+import seaborn as sns
+import geopandas as gpd
+import pandas as pd
+import io
+import base64
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.ticker as mticker
+from lussi.ziprecruiter import *
+from lussi.stackoverflow import * 
+
+data_dir = "622data_nogit"
+ziprecruiter = load_zip(data_dir = data_dir)
+wide_stack = load_stack(data_dir=data_dir, stack_type=StackType.WIDE)
+```
+
+<!--  
+# To build and publish. 
+
+# 1, render as HTML.
+(.venv) hurricane:krijudato afraser$ quarto render ./622a1.qmd --to html 
+
+# make sure you're logged into rpubs and have published something so rsconnect is already configured and cached. 
+(.venv) hurricane:krijudato afraser$ Rscript -e "rsconnect::rpubsUpload('622 Project 1', '622a1.html', '622a1.qmd')"
+
+$id
+[1] "https://api.rpubs.com/api/v1/document/1229195/1b9ef99cdcaf419ba3c51a101056d0ae"
+$continueUrl
+[1] "http://rpubs.com/publish/claim/1229195/a4db2923e69e43fb82a62a12c795d9e3"
+# Now go to the claim URL and claim it.
+-->
+
+# Data Sets
+
+This project analyzes two datasets: one from ZipRecruiter and the other from Stack Overflow.
+
+•	ZipRecruiter Dataset: A heavily curated, clean, and well-structured dataset. It offers a tight focus, making it easy to work with and delivering highly accurate predictions.
+
+•	Stack Overflow Dataset: A generation of self-reported survey data, providing valuable insights but requiring more effort to clean and analyze. As we’ll see, while the ZipRecruiter dataset enables near-perfect predictions, the Stack Overflow data presents more challenges due to variability and inconsistencies.
+
+## Data Set 1: Zip Recruiter 
+First, let’s view a sample of the Zip Recruiter dataset:
+```{python ziprecruiter}
+ziprecruiter.sample(n=10, random_state=42).head(10)
+```
+```{python plot1, message=false, warning=false, echo=false, fig.width=8, fig.height=5}
+# Note that becuase we are publishing to the web, we will be base64 encoding our 
+#images directly into this web page.
+df = ziprecruiter # so we don't overwrite anything! 
+plt.figure(figsize=(8, 5))
+sns.boxplot(y='Job Title', x='Annual Salary', data=df, orient='h')
+plt.title('Salary by title within this data set')
+plt.ylabel('')  # Remove the label on the y-axis
+img_buf = io.BytesIO()
+plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
+plt.close()  # Prevents Quarto from auto-rendering the plot. 
+img_buf.seek(0) ## reset the buffer
+img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Salary by title" />'
+# And render. There is no cached image!
+from IPython.display import display, HTML
+display(HTML(img_html))
+```
+
+### Overview of the Dataset
+
+This dataset was scraped from ZipRecruiter using Selenium and Chromedriver. We collected several pages containing salary information by job title and state, such as a page for [data engineers](https://www.ziprecruiter.com/Salaries/What-Is-the-Average-DATA-Engineer-Salary-by-State). Additionally, we added state abbreviations and a salary tier column to provide more granular analysis.
+
+Though relatively small, the dataset is clean, standardized, and well-suited for both analysis and prediction. Its structure makes it an excellent candidate for regression-based algorithms such as Linear Regression or Random Forest, allowing us to predict salaries based on key features like job title and state.
+
+### Model Evaluation
+
+```{python lr}
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+# One-hot encode categorical state and job title
+df = pd.get_dummies(ziprecruiter, columns=['State', 'Job Title'], drop_first=True)
+
+# Split the data into features (X) and target (y)
+X = df.drop(['Annual Salary', 'Abbreviation', 'Salary Tier'], axis=1)
+y = df['Annual Salary']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+lr_model = LinearRegression()
+lr_model.fit(X_train, y_train)
+
+y_pred = lr_model.predict(X_test)
+
+# Evaluate the model
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+# Print the evaluation metrics
+print(f'Mean Squared Error: {mse:.2f}')
+print(f'R² Score: {r2:.5f}')
+
+```
+
+The linear regression model performed exceptionally well:
+
+•	Mean squared error : 10.70. This low MSE indicates that the model’s 
+    predictions are highly accurate and closely align with the actual values.
+
+•	R² score: 0.99999997. An R² score near 1 suggests that the model 
+    explains nearly all the variability in annual salaries. 
+
+### Conclusion
+
+This strong linear relationship between the input features (e.g., job title and state) and the target variable (annual salary) demonstrates the suitability of linear regression for this dataset. Its ability to make accurate predictions with minimal error makes it highly useful for exploring salary trends across different states and roles. This can help job seekers and recruiters alike in setting appropriate salary expectations based on job title and location. Additionally, the clean dataset offers opportunities for further analysis with more advanced models, such as Random Forest or Gradient Boosting.
+
+But, nobody cares about Zip Recruiter. That's where newbies get their jobs.
+
+## Stack Overflow
+Now let's look at the wide Stack Overflow dataset, and be sure scroll to the right.: 
+```{python ziprecruiter}
+wide_stack.sample(n=10, random_state=42).head(10)
+```
+This dataset originates from the [Stack Overflow user-entered survey data](https://survey.stackoverflow.co), covering responses from 2017 through 2023. We uploaded the raw survey data to an S3 bucket and processed it extensively to extract core columns that we believe could predict key values, particularly annual salary.
+
+This wide dataset contains over 500,000 records and is much more complex, with numerous categorical variables and some missing data. The complexity makes it well-suited for advanced machine learning algorithms like XGBoost or Random Forest, which can efficiently handle high-dimensional data and missing entries. It offers opportunities to explore various questions, such as predicting salary based on skills and education or classifying job titles based on technical skillsets.
+
+The before we dig any further, we have to point out that some data doesn't exist in some years. For example, there is no gender or sexual identity included in the survey moving forward. This shows which core columns we have access to. 
+
+### Stack Overflow columns used percentage, by year
+```{python plot2, message=false, warning=false, echo=false, fig.width=8, fig.height=9}
+filtered_columns = wide_stack.loc[:, 'Year':'AgeAvg']
+
+# Group and calculate the percentage of non-null values for the filtered columns
+grouped_summary_filtered = filtered_columns.groupby("Year").agg(lambda x: (x.notnull().mean() * 100)).reset_index()
+
+# Round the result to one decimal place
+grouped_summary_filtered_rounded = grouped_summary_filtered.round(1)
+
+# Display the grouped summary
+from IPython.display import display
+display(grouped_summary_filtered_rounded)
+```
+
+
+This is an massively curated and standardized dataset. Let's see if we can create a good model from it.
+
