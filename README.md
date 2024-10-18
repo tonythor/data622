@@ -14,6 +14,7 @@ October 2024
 /opt/homebrew/Cellar/python\@3.10/3.10.15/bin/python3.10 -m venv .venv
 source ./.venv/bin/activate
 pip install -r ./requirements.txt
+python -m ipykernel install --user --name data622 --display-name "data622"
 
 ```
 
