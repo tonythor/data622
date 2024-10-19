@@ -35,7 +35,7 @@ execute:
 
 /* General Layout Styling */
 body {
-    width: 900px;
+    width: 1000px;
     font-family: Arial, sans-serif;
     margin: 0 auto;
     background-color: white;
@@ -148,9 +148,9 @@ img {
 }
 </style>
 <p style="text-align: center;">
-  [github](https://github.com/tonythor/data622) &nbsp; | &nbsp; [web presentation](https://rpubs.com/tonythor/data622-project1)
+  <a href="https://github.com/tonythor/data622" target="_blank">github</a> &nbsp; | &nbsp; 
+  <a href="https://rpubs.com/tonythor/data622-project1" target="_blank">web presentation</a>
 </p>
-
 
 
 
