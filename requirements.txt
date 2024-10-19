@@ -39,3 +39,4 @@ statsmodels
 qgrid
 ipywidgets==7.7.2
 jupyterlab_widgets
+itables
