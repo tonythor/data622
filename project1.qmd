@@ -1,7 +1,7 @@
 ---
 title: "Project 1: Pay and our industry"
 author: "Team: I Love Lucy"
-date: "10 Oct 2024"
+date: "20 Oct 2024"
 output:
   html_document:
     toc: true
@@ -15,9 +15,7 @@ execute:
   message: false
   freeze: auto
 ---
-
 <style>
-/* Quarto Meta Title Styling */
 .quarto-title-meta {
     display: flex;
     justify-content: space-between;
@@ -33,20 +31,19 @@ execute:
     margin-right: 20px;
 }
 
-/* General Layout Styling */
 body {
-    width: 1000px;
+    width: 900px; /* Lock the body width to 900px */
     font-family: Arial, sans-serif;
-    margin: 0 auto;
-    background-color: white;
+    margin: 0 auto; /* Center the body */
+    background-color: white; /* Set background to white */
 }
 
-/* Header Container Styling */
+/* Flexbox container for title and author */
 .header-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 20px; /* Add space below the header */
 }
 
 .header-container h1 {
@@ -55,103 +52,78 @@ body {
 }
 
 .header-container .meta-info {
-    text-align: right;
+    text-align: right; /* Align the meta information (author, date) to the right */
     font-size: 1.2em;
     margin: 0;
 }
 
-/* Header Font Styling */
-h1, h2, h3, h4, h5, h6 {
+h2, h3, h4, h5, h6 {
     font-family: Arial, sans-serif;
-    margin: 0 0 10px 0;
-    padding: 0;
-    line-height: 1.2;
+    margin: 0 0 10px 0; /* Reduce the bottom margin for more compact headers */
+    padding: 0; /* Remove padding */
+    line-height: 1.2; /* Control the line spacing */
 }
 
-/* Table Styling */
+/* Adjust table and image styles */
 table {
-    width: 100%;
+    width: 100%; /* Make table full width within the 900px body */
     border-collapse: collapse;
-    margin: 0 auto;
-    table-layout: fixed; /* Ensures even column widths */
-}
-
-table.dataTable {
-    width: 100% !important;
-    table-layout: fixed;
-}
-
-/* Header Styling for DataTable */
-thead th {
-    padding: 10px;
-    background-color: #f2f2f2;
-    text-align: left;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-/* Body Cell Styling */
-table.dataTable td,
-table.dataTable th {
-    padding: 8px;
-    border: 1px solid lightgray;
-    vertical-align: middle;
-}
-
-/* DataTables Wrapper Styling */
-div.dataTables_wrapper {
-    width: 100%;
-    margin: 0 auto;
-}
-
-/* Scrolling Controls */
-.dataTables_scrollBody {
-    max-height: 300px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    width: 100%; 
-}
-
-.dataTables_scrollHead {
-    overflow: hidden;
-}
-
-.dataTables_scrollHeadInner {
-    width: 100% !important;
-}
-
-/* Prevent Independent Scrolling Issues */
-.dt-scroll-body, 
-.dt-scroll-head, 
-.dt-container, 
-.dt-layout-table {
-    border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Image Styling */
-img {
     max-width: 100%;
+    margin-left: auto;  /* Center the table */
+    margin-right: auto; /* Center the table */
+    overflow-x: auto; /* Allow horizontal scrolling if the table is too wide */
+    display: block;
+}
+
+table, th, td {
+    border: 1px solid lightgray;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+/* Custom figure sizing */
+.figure {
+    width: 100%; /* Ensure figures take full width within the 900px body */
+    margin-left: auto;  /* Center figure */
+    margin-right: auto; /* Center figure */
+}
+
+img {
+    max-width: 100%;  /* Ensure images take full width within the 900px body */
     height: auto;
     display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Figure Styling */
-.figure {
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: auto;  /* Center image */
+    margin-right: auto; /* Center image */
 }
 </style>
 <p style="text-align: center;">
-  <a href="https://github.com/tonythor/data622" target="_blank">github</a> &nbsp; | &nbsp; 
-  <a href="https://rpubs.com/tonythor/data622-project1" target="_blank">web presentation</a>
+    <a href=https://github.com/tonythor/data622 target=_blank>Github</a> &nbsp; | &nbsp; <a href=https://rpubs.com/tonythor/data622-project1 target=_blank>Web Presentation</a>
 </p>
 
+```{python import_and_load, message=false, warning=false, echo=FALSE}
+import matplotlib.pyplot as plt
+import seaborn as sns
+import geopandas as gpd
+import pandas as pd
+import io
+import base64
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.ticker as mticker
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.metrics import mean_squared_error, r2_score
+import xgboost as xgb
+from scipy.stats import randint
+from lussi.ziprecruiter import *
+from lussi.stackoverflow import * 
+data_dir = "622data_nogit"
+ziprecruiter = load_zip(data_dir = data_dir)
+wide_stack = load_stack(data_dir=data_dir, stack_type=StackType.WIDE)
+
+```
 
 
 # Data Sets
@@ -161,24 +133,6 @@ This project analyzes two datasets: one from ZipRecruiter and the other from Sta
 •	ZipRecruiter Dataset: A heavily curated, clean, and well-structured dataset. It offers a tight focus, making it easy to work with and delivering highly accurate predictions.
 
 •	Stack Overflow Dataset: A generation of self-reported survey data, providing valuable insights but requiring more effort to clean and analyze. As we’ll see, while the ZipRecruiter dataset enables near-perfect predictions, the Stack Overflow data presents more challenges due to variability and inconsistencies.
-
-## Load
-```{python import_and_load, message=false, warning=false, echo=false}
-import io
-import base64
-import matplotlib.pyplot as plt
-import seaborn as sns
-import geopandas as gpd
-import pandas as pd
-import matplotlib.ticker as mticker
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from itables import show
-from lussi.ziprecruiter import *
-from lussi.stackoverflow import * 
-data_dir = "622data_nogit"
-ziprecruiter = load_zip(data_dir = data_dir)
-wide_stack = load_stack(data_dir=data_dir, stack_type=StackType.WIDE)
-```
 
 ## Data Set 1: Zip Recruiter 
 First, let’s view a sample of the Zip Recruiter dataset:
@@ -249,320 +203,496 @@ The linear regression model performed exceptionally well:
     explains nearly all the variability in annual salaries. 
 
 ### Conclusion
-The ZipRecruiter dataset shines due to its clean structure and high-quality data. With straightforward, well-labeled columns, it is a dream for regression models. The linear regression model performed exceptionally well here, with a near-perfect R² score and minimal error. This demonstrates that linear relationships between job title, location, and salary are sufficient to predict outcomes accurately.
 
-From a business perspective, this dataset provides actionable insights. Recruiters and job seekers can rely on these predictions to benchmark salaries based on roles and geography. However, its curated nature may limit the depth of insight—since the data is pre-filtered for clear patterns, it leaves less room for exploratory or advanced analysis beyond standard predictions.
+This strong linear relationship between the input features (e.g., job title and state) and the target variable (annual salary) demonstrates the suitability of linear regression for this dataset. Its ability to make accurate predictions with minimal error makes it highly useful for exploring salary trends across different states and roles. This can help job seekers and recruiters alike in setting appropriate salary expectations based on job title and location. Additionally, the clean dataset offers opportunities for further analysis with more advanced models, such as Random Forest or Gradient Boosting.
 
+But, nobody cares about Zip Recruiter. That's where newbies get their jobs.
 
-## Stack Overflow
+## Data Set 2: Stack Overflow
+
+### Overview of the Dataset
+
 Now let's look at the wide Stack Overflow dataset, and be sure scroll to the right.: 
 ```{python ziprecruiter}
-
-show(wide_stack.sample(n=10, random_state=42), scrollY='300px', paging=True, scrollX=True)
-# wide_stack.sample(n=10, random_state=42).head(10)
+wide_stack.sample(n=10, random_state=42).head(10)
 ```
-This dataset originates from the [Stack Overflow user-entered survey data](https://survey.stackoverflow.co), contains about half a million records and spans between 2017 through 2023. We uploaded the raw survey data to an S3 bucket, and using the code in the lussi python namespace of this project, we standardized and extracted many columns with the hope of predicting annual salary. 
+This dataset originates from the [Stack Overflow user-entered survey data](https://survey.stackoverflow.co), covering responses from 2017 through 2023. We uploaded the raw survey data to an S3 bucket and processed it extensively to extract core columns that we believe could predict key values, particularly annual salary.
 
+This wide dataset contains over 500,000 records and is much more complex, with numerous categorical variables and some missing data. The complexity makes it well-suited for advanced machine learning algorithms like XGBoost or Random Forest, which can efficiently handle high-dimensional data and missing entries. It offers opportunities to explore various questions, such as predicting salary based on skills and education or classifying job titles based on technical skillsets.
 
-### Stack Overflow columns used percentage, by year
-Out of gate, a big chunk of this data is not usable. Have a look at this chart, it shows some columns that just aren't included between years. 
+We decided to focus on records from the United States only so it is comparable to the Zip Recruiter analysis. 
+
+```{python features, message=false, warning=false}
+# filter for US only
+us_data = wide_stack[wide_stack['Country'] == 'United States']
+```
+
+### Exploratory Data Analysis (EDA)
+
+#### Stack Overflow columns used percentage, by year
+
+Before we dig any further, we have to point out that some data doesn't exist in some years. For example, there is no gender or sexual identity included in the survey moving forward. This shows which core columns we have access to. 
 
 ```{python plot2, message=false, warning=false, echo=false, fig.width=8, fig.height=9}
-grouped_summary_filtered = wide_stack.groupby("Year").agg(lambda x: (x.notnull().mean() * 100)).reset_index()
+filtered_columns = wide_stack.loc[:, 'Year':'AgeAvg']
+
+# Group and calculate the percentage of non-null values for the filtered columns
+grouped_summary_filtered = filtered_columns.groupby("Year").agg(lambda x: (x.notnull().mean() * 100)).reset_index()
+
 # Round the result to one decimal place
 grouped_summary_filtered_rounded = grouped_summary_filtered.round(1)
-# Display the grouped summary
-# from IPython.display import display
-# display(grouped_summary_filtered_rounded)
-show(
-    grouped_summary_filtered_rounded, 
-    scrollY='300px', 
-    scrollX=True, 
-    paging=True, 
-    datatables_options={
-        'scrollCollapse': True,
-        'fixedHeader': True
-    }
-)
-# show(grouped_summary_filtered_rounded, scrollY='300px', paging=True, scrollX=True)
 
+# Display the grouped summary
+from IPython.display import display
+display(grouped_summary_filtered_rounded)
 ```
 
-### Selecting a model
 
-Extreme Gradient Boosting (XGBoost) is our first and best choice. Our data is all over the map. XGBoost is going to be robust to missing values, scalable, friendly to nonlinear relationships, good at handling outliers, and good for generalization of trends across years.
+#### Features 
 
-Models like Linear Regression (LR) aren't a good fit. LR assumes that feature relationships are purely linear. It also doesn't like outliers.  
+With a clear understanding of the dataset's structure established, we then turned our attention to examining the features within the data. This analysis will help us identify the characteristics that could influence our model's performance and guide our feature selection process.
 
-We'll run use Random Forest as a control, but it won't be good either. There is risk of over-fitting, we'd have to impute data, it'll be slow, and doesn't  like highly dimensional features. 
-
-### Further preparing
-```{python furtherEngineering, message=false, warning=false, echo=false, fig.width=8, fig.height=9}
-
+```{python features, message=false, warning=false,echo=false}
 def group_gender(gender):
-    gender = str(gender).lower()  # Converts to lowercase
+    gender = str(gender).lower()  # converts to lowercase 
     if 'female' in gender or 'woman' in gender:
         return 'Female'
     elif 'male' in gender or 'man' in gender:
         return 'Male'
     else:
         return 'Other'
-        
-def parse_devtype(df):
-    devtype_dummies = df['DevType'].str.get_dummies(sep=';')  # One-hot encode DevType roles
-    return pd.concat([df, devtype_dummies], axis=1)  # Add the encoded roles to the DataFrame
-    
-# Step 2: Apply transformations, including parsing and encoding 'DevType'
-filtered_stack = (
-    wide_stack
-    .query("Year != 2019 and Year != 2020")  # No salary
-    .query("Year != 2017")  # No age
-    .query("Country == 'United States'")  # Forget that!
-    .assign(gender_grouped=wide_stack['Gender'].apply(group_gender))  # Add gender_grouped, simplify to m/f/o
-    .pipe(parse_devtype)  # Add in DevType columns
-    .drop('Gender', axis=1) 
-    .drop('Sexuality', axis=1)  # DE: sexuality_grouped as either straight or lgbtq+
-    .drop('Ethnicity', axis=1)  # DE: ethnicity_grouped, either minority or non-minority
-    .drop('PlatformWorkedWith', axis=1)  # DE: expanded in calculated columns
-    .drop('LanguageWorkedWith', axis=1)  # DE: expanded in calculated columns
-    .drop('DatabaseWorkedWith', axis=1)  # DE: expanded in calculated columns
-    .drop('US_State', axis=1)  # Too few
-    .drop('Country', axis=1) 
-    .drop('YearsCodePro', axis=1)  # DE: Replaced by YearsCodeProAvg
-    .drop('OrgSize', axis=1)  # DE: Handled by OrgSizeAvg
-    .drop('Age', axis=1)  # DE: Replaced with average age
-    .drop('DevType', axis=1)  # Already expanded into one-hot columns
-    .query('AnnualSalary > 1')   
-)
 
-print(f"Length of filtered_stack is: {len(filtered_stack)}") 
-# filtered_columns = wide_stack
-# Group and calculate the percentage of non-null values for the filtered columns
-grouped_summary_filtered = filtered_stack.groupby("Year").agg(lambda x: (x.notnull().mean() * 100)).reset_index()
-# Round the result to one decimal place
-grouped_summary_filtered_rounded = grouped_summary_filtered.round(1)
-# Display the grouped summary
-show(grouped_summary_filtered_rounded, scrollY='300px', paging=True, scrollX=True)
-show(filtered_stack.sample(n=10, random_state=42), scrollY='300px', paging=True, scrollX=True)
+us_data['gender_grouped']=us_data['Gender'].apply(group_gender)
 ```
 
-### Random Forest First
-In trying this, our initial performane was pretty terrible. We've already adjusted this by adding in kfold validation. 
+```{python columns, message=false,warning=false}
+# columns to keep (all features)
+cols_to_keep = ['AnnualSalary','YearsCodeProAvg', 'OrgSizeAvg', 
+                'scala', 'python', 'javascript', 'EdLevel',
+                'postgresql', 'ethnicity_grouped', 'AgeAvg', 
+               'gender_grouped','aws','mysql','redis','sql',
+               'java','ruby','php','c','mongodb',
+               'oracle','ibmdb2','sqlite','kubernetes',
+               'linux','windows']
 
-```{python randomForest, message=false, warning=false, echo=false, fig.width=8, fig.height=9}
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import io
-import base64
-from sklearn.model_selection import train_test_split, cross_val_score, KFold
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from IPython.display import display, HTML
+# new dataframe with specific columns
+df_new = us_data[cols_to_keep].copy()
 
-# Step 1: Identify categorical columns and fill missing values if necessary
-df = filtered_stack.fillna('Unknown')  # Handle missing values
+# print datatypes of columns
+print(df_new.dtypes)
+```
 
-# Step 2: Separate the target and features before encoding
-y = df['AnnualSalary']  # Target variable
-X = df.drop(['AnnualSalary', 'Year'], axis=1)  # Drop target and irrelevant columns
+We deteremined that majority of the features are categorical with a few float features (YearsCodeProAvg, OrgSizeAvg,and AgeAvg). Based on this information, we determined that we needed a model that can handle categorical variables natively. 
 
-# Step 3: Apply one-hot encoding to features only
-X_encoded = pd.get_dummies(X, drop_first=True)
+#### Target Variable
 
-# Step 4: K-Fold Cross-Validation Setup
-kfold = KFold(n_splits=5, shuffle=True, random_state=42)  # 5 folds
+There are labels in our data (target variable) and this affected our choice of algorithm. Since AnnualSalary is a continous variable, we are working on a regression problem. This narrows down our alogrithm choices to regression models such as:
 
-# Step 5: Train the RandomForestRegressor with Cross-Validation
-rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+- Linear Regression
+- XGBoost
+- Random Forest Regressor
+- Support Vector Regressor
 
-# Step 6: Perform Cross-Validation
-cv_scores = cross_val_score(rf_model, X_encoded, y, cv=kfold, scoring='neg_mean_squared_error')
+Given our exploratory analysis of the features, we narrowed down our model choice to XGBoost and Random Forest. 
 
-# Convert negative MSE to positive for interpretation
-mse_scores = -cv_scores
-rmse_scores = np.sqrt(mse_scores)
+Below is the distribution of the target variable (AnnualSalary).
 
-print(f"Cross-Validation MSE Scores: {mse_scores}")
-print(f"Cross-Validation RMSE Scores: {rmse_scores}")
-print(f"Average RMSE: {rmse_scores.mean():.2f}")
+```{python target-variable-dist, message=false, warning=false, echo=false}
+annualsalary = df_new['AnnualSalary'].dropna()
 
-# Step 7: Train on Full Training Data and Evaluate
-X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
-rf_model.fit(X_train, y_train)
-
-# Step 8: Make Predictions and Evaluate the Model
-y_pred = rf_model.predict(X_test)
-
-mae = mean_absolute_error(y_test, y_pred)  # Mean Absolute Error
-mse = mean_squared_error(y_test, y_pred)  # Mean Squared Error
-rmse = np.sqrt(mse)  # Root Mean Squared Error
-r2 = r2_score(y_test, y_pred)  # R² Score
-
-# Print Evaluation Metrics
-print(f"Test Set Metrics:")
-print(f"Mean Absolute Error (MAE): {mae:.2f}")
-print(f"Mean Squared Error (MSE): {mse:.2f}")
-print(f"Root Mean Squared Error (RMSE): {rmse:.2f}")
-print(f"R² Score: {r2:.5f}")
-
-# Step 9: Get feature importances from the trained model
-importances = rf_model.feature_importances_
-
-# Step 10: Get the feature names from the encoded DataFrame
-feature_names = X_encoded.columns
-
-# Step 11: Sort feature importances in descending order
-indices = np.argsort(importances)[::-1]
-
-# Step 12: Select the top 15 most important features (optional)
-top_n = 15
-top_indices = indices[:top_n]
-
-# Step 13: Create the plot and save it to a buffer
-plt.figure(figsize=(10, 6))
-plt.barh(
-    [feature_names[i] for i in top_indices], 
-    importances[top_indices], 
-    align='center'
-)
-plt.xlabel('Feature Importance')
-plt.title('Top Feature Importance Random Forest Regressor')
-plt.gca().invert_yaxis()  # Invert y-axis to display the most important feature on top
+# Generate the boxplot and encode it in Base64
+plt.figure(figsize=(10, 5))
+plt.boxplot(annualsalary)
+plt.title('Boxplot of Target Variable (AnnualSalary)')
+plt.ylabel('Target Variable Values')
 
 # Save the plot to a BytesIO buffer
 img_buf = io.BytesIO()
-plt.savefig(img_buf, format='png', bbox_inches='tight')
-plt.close()  # Close the plot to free up memory
+plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
+plt.close()  # Prevent Quarto from auto-rendering the plot
 
-# Reset the buffer position to the beginning
+# Reset buffer position and convert the image to Base64
 img_buf.seek(0)
-
-# Convert the buffer content to a base64 string
 img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
 
-# Create an HTML <img> tag with the base64-encoded image
-img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Random Forest Feature Importance" />'
+# Generate the HTML for embedding the image
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Boxplot of Target Variable (AnnualSalary)" />'
 
-# Display the HTML with the embedded image
+# Display the image
+from IPython.display import display, HTML
 display(HTML(img_html))
 
 ```
 
-### XGBoost
+ As observed, there are outliers in the distribution. We chose to address these using the Interquartile Range (IQR) method because it is a robust technique for detecting and removing extreme values without making assumptions about the data distribution, unlike methods such as z-scores which assume normality. The IQR method is particularly effective when dealing with skewed data, which is common in salary distributions. By focusing on the middle 50% of the data (between the 25th and 75th percentiles), this approach minimizes the impact of extreme outliers that could distort model performance.
 
-```{python randomForest, message=false, warning=false, echo=false, fig.width=8, fig.height=9}
+Further details on the impact of removing outliers will be discussed in the model section, where we describe the performance of the model with and without these outliers.
 
-import pandas as pd
-import numpy as np
-import xgboost as xgb
-import matplotlib.pyplot as plt
-import io
-import base64
-from sklearn.model_selection import train_test_split, cross_val_score, KFold
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from IPython.display import display, HTML
+```{python IQR method, message=false, warning=false}
+ # Calculate Q1 (25th percentile) and Q3 (75th percentile)
+Q1 = df_new['AnnualSalary'].quantile(0.25)
+Q3 = df_new['AnnualSalary'].quantile(0.75)
 
-# Step 1: Prepare the data
-df = filtered_stack.fillna('Unknown')  # Handle missing values
-y = df['AnnualSalary']  # Target variable
-X = df.drop(['AnnualSalary', 'Year'], axis=1)  # Drop target and irrelevant columns
+# Calculate the IQR
+IQR = Q3 - Q1
 
-# Step 2: Apply one-hot encoding
-X_encoded = pd.get_dummies(X, drop_first=True)
+# Define outlier bounds
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
 
-# Step 3: Set up K-Fold Cross-Validation
-kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+# Remove outliers from the dataframe
+df_filtered = df_new[(df_new['AnnualSalary'] >= lower_bound) & (df_new['AnnualSalary'] <= upper_bound)]
+```
 
-# Step 4: Train the XGBoost Regressor with Cross-Validation
-xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=100, random_state=42)
+Here is the distribution post-IQR.
 
-# Step 5: Perform Cross-Validation
-cv_scores = cross_val_score(xgb_model, X_encoded, y, cv=kfold, scoring='neg_mean_squared_error')
-
-# Convert negative MSE to positive for interpretation
-mse_scores = -cv_scores
-rmse_scores = np.sqrt(mse_scores)
-
-print(f"Cross-Validation MSE Scores: {mse_scores}")
-print(f"Cross-Validation RMSE Scores: {rmse_scores}")
-print(f"Average RMSE: {rmse_scores.mean():.2f}")
-
-# Step 6: Train on Full Training Data and Evaluate
-X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
-xgb_model.fit(X_train, y_train)
-
-# Step 7: Make Predictions on the Test Set
-y_pred = xgb_model.predict(X_test)
-
-# Step 8: Evaluate the Model
-mae = mean_absolute_error(y_test, y_pred)  # Mean Absolute Error
-mse = mean_squared_error(y_test, y_pred)  # Mean Squared Error
-rmse = np.sqrt(mse)  # Root Mean Squared Error
-r2 = r2_score(y_test, y_pred)  # R² Score
-
-# Print Test Set Metrics
-print(f"\nTest Set Metrics:")
-print(f"Mean Absolute Error (MAE): {mae:.2f}")
-print(f"Mean Squared Error (MSE): {mse:.2f}")
-print(f"Root Mean Squared Error (RMSE): {rmse:.2f}")
-print(f"R² Score: {r2:.5f}")
-
-# Step 9: Get feature importances from the XGBoost model
-importances = xgb_model.feature_importances_
-
-# Step 10: Get the feature names from the encoded DataFrame
-feature_names = X_encoded.columns
-
-# Step 11: Sort feature importances in descending order
-indices = np.argsort(importances)[::-1]  # Sort in descending order
-
-# Step 12: Select the top 15 most important features (optional)
-top_n = 15
-top_indices = indices[:top_n]
-
-# Step 13: Create the plot and save it to a buffer
-plt.figure(figsize=(10, 6))
-plt.barh(
-    [feature_names[i] for i in top_indices], 
-    importances[top_indices], 
-    align='center'
-)
-plt.xlabel('Feature Importance')
-plt.title('Top Feature Importance XGBoost Regressor')
-plt.gca().invert_yaxis()  # Invert y-axis to display the most important feature on top
+```{python post-IQR dist, message=false, warning=false, echo=false}
+plt.boxplot(df_filtered['AnnualSalary'])
+plt.title('Boxplot of Target Variable (AnnualSalary)')
+plt.ylabel('Target Variable Values')
 
 # Save the plot to a BytesIO buffer
 img_buf = io.BytesIO()
-plt.savefig(img_buf, format='png', bbox_inches='tight')
-plt.close()  # Close the plot to free up memory
+plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
+plt.close()  # Prevent Quarto from auto-rendering the plot
 
-# Reset the buffer position to the beginning
+# Reset buffer position and convert the image to Base64
 img_buf.seek(0)
-
-# Convert the buffer content to a base64 string
 img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
 
-# Create an HTML <img> tag with the base64-encoded image
-img_html = f'<img src="data:image/png;base64,{img_base64}" alt="XGBoost Feature Importance" />'
+# Generate the HTML for embedding the image
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Boxplot of Target Variable (AnnualSalary)" />'
 
-# Display the HTML with the embedded image
+# Display the image
+from IPython.display import display, HTML
 display(HTML(img_html))
 ```
-## Conclusions, Stack Overflow Data
 
-The Stack Overflow dataset provides rich self-reported information, capturing the diversity of real-world roles, company sizes, and technologies. However, this variety makes it difficult to create accurate predictions. Missing values and inconsistencies across survey years add further challenges. Critical factors like location or individual job performance, which are important for predicting salaries, are absent. As a result, it’s tough to generate reliable models from this data.
+### Model
 
-Even though it’s not ideal for predictive tasks, the dataset still offers value for exploring trends in the industry. It’s useful for understanding how salaries differ across technologies or tracking workplace diversity over time. While the data has gaps, it remains a solid tool for reporting and analysis.
+For the model, we decided to use XGBoost for the following reasons:
 
-## Model Performance and Practical Use
+* Large dataset: XGBoost is highly efficient when working with large datasets
 
-XGBoost and Random Forest fell short of expectations. Predictive accuracy of at least 75% is necessary for practical use, but the results here were far from that. Both models produced high error rates, with RMSE values over 800,000, and their negative R² scores show they struggled to find meaningful patterns. XGBoost, although suited for messy and complex datasets, didn’t perform well because the absence of key context limited what it could learn. Random Forest also struggled with the high-dimensional data and noise, requiring more preprocessing, which made it less practical. The combination of these factors suggests that predictions from this dataset are only slightly better than random guesses.
+* Mixed feature types: The dataset contains both categorical and numeric features, and XGBoost can natively handle this mixture without requiring extensive pre-processing.
 
-## Takeaways and Final Thoughts
+* Missing values: XGBoost can effectively handle missing values by internally learning the best direction to take when encountering them, making it a natural fit for our dataset with some incomplete entries.
 
-While the Stack Overflow dataset isn’t suited for salary predictions, it still provides valuable insights. It can be used to explore trends, such as salary benchmarks for different technologies or the demographics of various job roles. For predictive modeling, however, curated datasets like ZipRecruiter or commercially available data with more context would be more reliable.
+We chose not to use Random Forest primarily because it tends to perform better on smaller and less complex datasets. Given the size and intricacy of the Stack Overflow dataset, XGBoost was a better fit due to its scalability and ability to handle high-dimensional, complex data.
 
-Moving forward, the focus should shift away from predictions and toward extracting insights from the data we have. If prediction remains a goal, combining datasets or finding one with detailed regional or performance metrics could improve results. For now, the strength of this dataset lies in the stories it can tell about the tech industry rather than in predicting individual salaries.
+#### Pre-Processing
+
+Even though XGBoost can handle categorical variables natively, they still need to be represented numerically. To prepare the categorical variables for the model, we opted to use one-hot encoding.
+
+In the code below, we used the pd.get_dummies function to convert the categorical variables into binary (boolean) columns. These columns represent each category as True or False. To make this data compatible with the model, we then converted the boolean values into integers, assigning True as 1 and False as 0.
+
+```{python encoding categorical variables, message=false,warning=false}
+# One-hot encode categorical variables
+df_encoded = pd.get_dummies(df_filtered, drop_first=True)
+
+# Identify all boolean columns
+bool_cols = df_encoded.select_dtypes(include=['bool']).columns
+
+# Convert boolean columns to integers (True -> 1, False -> 0)
+df_encoded[bool_cols] = df_encoded[bool_cols].astype(int)
+```
+
+#### Splitting Dataset into Train and Test Set
+
+After preprocessing the dataset, we split it into training and testing sets to evaluate how well the model generalizes to new, unseen data. This split ensures that the model does not simply memorize the training data, but instead learns patterns that will perform well on future, unknown data.
+
+We divided the dataset into 80% training data and 20% testing data. This training set is used to build the model and the test set is used to evaluate the model's performance. By using the train_test_split function with test_size=0.2, we ensure that 80% of the data is used for training and the remaining 20% is used for testing. We also set random_state=42 to make the split reproducible, ensuring that every time the code is run, the dataset is split in the same way.
+
+```{python train-test, message=false, warning=false}
+# Update X and Y with the encoded data
+X = df_encoded.drop(columns=['AnnualSalary'])
+Y = df_encoded['AnnualSalary']
+
+# Split the dataset into 80% training and 20% testing data
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+```
 
 
+#### Creating the Model 
+
+To create the model, we started by defining the parameter grid for tuning our XGBoost model. The initial parameters were adjusted during experimentation to better suit the data's characteristics. Here’s the final grid:
+
+```{python param-grid, message=false, warning=false}
+# Define the parameter grid
+param_grid = {
+    'n_estimators': randint(200, 1000), # initial was randint(100, 500) ; updated was randint(200, 1000)
+     'max_depth': randint(2,6), # initial was (3,10); updated to  (2,6)
+     'learning_rate': [0.01, 0.05, 0.1], # initial was [0.001, 0.01, 0.1, 0.3]; updated to [0.01, 0.05, 0.1]
+     'subsample': [0.6, 0.8, 1.0],
+     'colsample_bytree': [0.6, 0.8, 1.0],
+     'gamma': [0, 0.1, 0.3, 0.5],
+     'min_child_weight': [10, 15, 20] # inital was [1,5,10]; updated to [10, 15, 20]
+}
+```
+
+This grid allows us to explore combinations of parameters that control both overfitting and generalization. The adjustments made to the ranges reflect our goal of simplifying the model without sacrificing accuracy, particularly with the high dimensionality of the dataset.
+
+Next, we used RandomizedSearchCV to optimize the hyperparameters and select the best-performing model based on cross-validation results.
+
+```{python instantiate, message=false, warning=false}
+# Instantiate the model and RandomizedSearchCV
+xgb_r = xgb.XGBRegressor(objective='reg:squarederror', seed=123)
+random_search = RandomizedSearchCV(estimator=xgb_r, 
+                                   param_distributions=param_grid, 
+                                   n_iter=50, 
+                                   scoring='neg_mean_squared_error', 
+                                   cv=5, 
+                                   verbose=1, 
+                                   random_state=42)
+
+# Fit the random search model
+random_search.fit(X_train, Y_train)
+print(f"Best parameters: {random_search.best_params_}")
+```
+
+We used RandomizedSearchCV instead of GridSearchCV to save time, as it explores a random selection of hyperparameter combinations rather than exhaustively testing all possible options. The n_iter=50 argument limits the number of iterations, ensuring a good balance between performance and computational efficiency.
+
+By tuning the model in this way, we can ensure that it performs optimally given the complexity and size of the Stack Overflow dataset.
+
+The next step is to use the best model identified through RandomizedSearchCV to make predictions on the test data:
+Given our 
+```{python predict, message=false,warning=false}
+# Predict using the best model
+best_model = random_search.best_estimator_
+pred = best_model.predict(X_test)
+```
+
+This code retrieves the optimal XGBoost model from the RandomizedSearchCV process and uses it to generate predictions for the test set (X_test). The predictions (pred) can then be used to evaluate the model's performance on unseen data.
+
+#### Assessing the Model Performance
+
+##### Metrics
+
+To assess the performance of the model, we calculated two key metrics: Root Mean Square Error (RMSE) and R-squared (R²). These metrics provide insights into the model's accuracy and goodness of fit.
+
+```{python RMSE-and-R2, message=false,warning=false,echo=false}
+# calculate RMSE
+rmse = np.sqrt(mean_squared_error(Y_test, pred))
+print(f"RMSE: {rmse}")
+
+# Compute the R² score
+r2 = r2_score(Y_test, pred)
+print("R²: %f" % r2)
+```
+
+After evaluating the model, we obtained the following performance metrics:
+
+- RMSE: 42,406.54
+- R²: 0.3842
+
+The Root Mean Square Error (RMSE) quantifies the average error between the predicted and actual values. In this case, an RMSE of 42,406.54 indicates that, on average, the model's predictions deviate from the actual values by this amount. Lower RMSE values suggest better model performance, making this a critical metric for assessing accuracy. 
+
+The R-squared (R²) score measures the proportion of variance in the target variable (Annual Salary) that can be explained by the features included in the model. With an R² value of 0.3842, approximately 38.42% of the variance in Annual Salary is accounted for by the model. While this indicates some explanatory power, there is still a significant portion of the variance (over 61.58%) that remains unexplained, suggesting potential areas for improvement in the model or the inclusion of additional features.
+
+These metrics together provide a solid foundation for evaluating the model's predictive capabilities, emphasizing its strengths while also identifying areas that may require further enhancement.
+
+To ensure that our model is not overfitting, we also compared the training and test metrics for RMSE and R²:
+
+```{python comparison, message =false,warning=false,echo=false}
+# Predictions on the training set
+train_pred = best_model.predict(X_train)
+
+# Predictions on the testing set
+test_pred = best_model.predict(X_test)
+
+# RMSE on the training set
+train_rmse = np.sqrt(mean_squared_error(Y_train, train_pred))
+print(f"Training RMSE: {train_rmse}")
+
+# RMSE on the testing set
+test_rmse = np.sqrt(mean_squared_error(Y_test, test_pred))
+print(f"Testing RMSE: {test_rmse}")
+
+# R² on the training set
+train_r2 = r2_score(Y_train, train_pred)
+print(f"Training R²: {train_r2}")
+
+# R² on the testing set
+test_r2 = r2_score(Y_test, test_pred)
+print(f"Testing R²: {test_r2}")
+```
+
+By analyzing the RMSE and R² values for both training and test sets, we observed that they are relatively close to one another. This similarity indicates that the model generalizes well and is not overfitting, performing similarly across both datasets.
+
+##### Feature Importance Plot
+
+The plot below illustrates the importance of each feature in relation to the model's predictions. We experimented with various combinations of features based on the insights gained from this plot. However, our analysis revealed that the optimal model performance was achieved by including all available features from the dataset. This suggests that each feature adds valuable information, and together they are important for enhancing the model's accuracy and strength.
+
+```{python feature importance, warning=false,message=false,echo=false}
+# Plot feature importance
+fig, ax = plt.subplots(figsize=(10, 5))
+xgb.plot_importance(best_model, importance_type='weight', max_num_features=20, ax=ax)
+plt.title('Top Feature Importance')
+
+# Save the plot to a BytesIO buffer
+img_buf = io.BytesIO()
+plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
+plt.close(fig)  # Close the figure to prevent auto-rendering
+
+# Reset buffer position and convert the image to Base64
+img_buf.seek(0)
+img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
+
+# Generate the HTML for embedding the image
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Top Feature Importance" />'
+
+# Display the image
+display(HTML(img_html))
+```
+
+##### Correlation
+
+We examined the correlation between the features in the training set to identify any relationships that could potentially influence the model's performance. If two features are correlated, it may indicate redundancy, which can lead to issues such as multicollinearity. This situation can negatively affect the model's interpretability and stability, as the model may struggle to distinguish the individual contributions of each correlated feature. Therefore, understanding feature correlations is crucial for feature selection and ensuring the model is both efficient and reliable.
+
+```{python corr, message=false, warning=false, echo=false}
+corr_matrix = df_encoded.drop(columns=['AnnualSalary']).corr()
+fig, ax = plt.subplots(figsize=(12, 8))  # Adjust the size as needed
+sns.heatmap(corr_matrix, annot=True, ax=ax)
+
+# Save the plot to a BytesIO buffer
+img_buf = io.BytesIO()
+plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
+plt.close(fig)  # Close the figure to prevent auto-rendering
+
+# Reset buffer position and convert the image to Base64
+img_buf.seek(0)
+img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
+
+# Generate the HTML for embedding the image
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Correlation Matrix Heatmap" />'
+
+# Display the image
+display(HTML(img_html))
+```
+
+Upon analyzing the correlation between features, we discovered that the YearsCodeProAvg and AgeAvg features exhibited a high degree of correlation. Given that YearsCodeProAvg was indicated as a more important feature in the feature importance plot, we initially considered removing AgeAvg from the model. However, after running experiments, we observed that the model's performance actually improved when both features were included. This finding suggests that while these features are correlated, they each contribute unique information that enhances the model's predictive capabilities. Consequently, we decided to retain both YearsCodeProAvg and AgeAvg in the final model to leverage their combined influence on the predictions.
+
+##### Outliers
+
+To thoroughly evaluate the model's performance, we conducted experiments both with and without outliers. Our findings revealed that excluding the outliers significantly enhanced the model's predictive accuracy and stability, leading us to decide to omit them from the final dataset used for modeling.
+
+When we ran the model with the outliers included, the Root Mean Square Error (RMSE) was 768,195.66, and the R-squared value was 0.007583, keeping all else the constant. These metrics indicated that the model was poorly fitted to the data. As a result, we applied the IQR method to handle the outliers, as described in the Exploratory Data Analysis (EDA) section, which led to a substantial improvement in model performance.
+
+##### Assessing the Model Visually
+
+###### Residuals vs Predicted Values Plot
+
+To understand how well our model performs, we plotted the residuals (the differences between actual and predicted values) against the predicted values. This helps us identify any patterns or biases in the model's predictions.
+
+Ideally, residuals should be randomly scattered around 0 without any noticeable pattern, indicating that the model is accurately capturing the underlying relationships in the data. In the plot below, the residuals appear to be randomly distributed around 0, which suggests that the model's predictions are not biased in any direction. This randomness supports the validity of the model's performance and suggests that it is effectively fitting the data.
+
+```{python plots-residuals-vs-predicted, message=false,warning=false,echo=false}
+residuals = Y_test - pred
+residuals_df = pd.DataFrame({
+    'Actual': Y_test,
+    'Predicted': pred,
+    'Residuals': residuals
+})
+
+# Generate the plot
+fig, ax = plt.subplots(figsize=(12, 6))
+sns.scatterplot(x='Predicted', y='Residuals', data=residuals_df, ax=ax)
+ax.axhline(0, color='red', linestyle='--')
+ax.set_title('Residuals vs Predicted Values')
+ax.set_xlabel('Predicted Values')
+ax.set_ylabel('Residuals')
+
+# Save the plot to a BytesIO buffer
+img_buf = io.BytesIO()
+plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
+plt.close(fig)  # Close the figure to prevent auto-rendering
+
+# Reset buffer position and convert to Base64
+img_buf.seek(0)
+img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
+
+# Generate HTML for embedding the image
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Residuals vs Predicted Values" />'
+
+# Display the image
+display(HTML(img_html))
+```
+
+###### Distribution of Residuals
+
+Next, we examined the distribution of the residuals using a histogram. This plot provides insight into how the residuals are spread, helping us assess the model's accuracy.
+
+The plot below shows a mostly bell-shaped distribution, with a slight tail to the right. While this deviation is noticeable, it is not severe enough to raise major concerns about the model's validity. Overall, the residuals suggest that the model performs reasonably well.
+
+```{python plots-histograms-of-resids, message=false,warning=false,echo=false}
+# Histogram of Residuals
+fig, ax = plt.subplots(figsize=(12, 6))
+sns.histplot(residuals, bins=30, kde=True, ax=ax)
+ax.set_title('Histogram of Residuals')
+ax.set_xlabel('Residuals')
+ax.set_ylabel('Frequency')
+
+# Save the plot to a BytesIO buffer
+img_buf = io.BytesIO()
+plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
+plt.close(fig)  # Close the figure to prevent auto-rendering
+
+# Reset buffer position and convert to Base64
+img_buf.seek(0)
+img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
+
+# Generate HTML for embedding the image
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Histogram of Residuals" />'
+
+# Display the image
+display(HTML(img_html))
+```
+
+###### Q-Q Plot of Residuals
+
+Finally, we created a Q-Q (Quantile-Quantile) plot to check the normality of the residuals. The red line represents a normal distribution. The closer the data points are to this line, the more they align with a normal distribution. 
+
+In the plot below, we observe that most of the residuals closely follow the normal line, indicating that they are approximately normally distributed. This provides a strong indication that the residuals meet the assumption of normality, lending further credibility to the model's validity.
+
+```{python plots-qq, message=false,warning=false,echo=false}
+import statsmodels.api as sm
+# Q-Q Plot
+fig = sm.qqplot(residuals, line='s')
+plt.title('Q-Q Plot of Residuals')
+
+# Save the plot to a BytesIO buffer
+img_buf = io.BytesIO()
+plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
+plt.close(fig)  # Close the figure to prevent auto-rendering
+
+# Reset buffer position and convert to Base64
+img_buf.seek(0)
+img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
+
+# Generate HTML for embedding the image
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Q-Q Plot of Residuals" />'
+
+# Display the image
+display(HTML(img_html))
+```
+
+###### Summary
+Overall, the visualizations of the model through the residuals vs. predicted values plot, histogram, and Q-Q plot provide a comprehensive evaluation of its performance. The randomness of residuals, the bell-shaped distribution, and the normality indicated in the Q-Q plot collectively suggest that the model is well-fitted to the data, meeting key assumptions of regression analysis. These findings reinforce the model's reliability and predictive capability, further suggesting that we utilized the appropriate model type, XGBoost. 
+
+### Conclusion
+
+In conclusion, our final model accounts for approximately 38.42% of the variability in annual salary and we've demonstrated that XGBoost was a justified model to use for this problem. However, there is still room for improvement. The results suggest that the features included in the model contribute valuable insights into salary, but it is essential to recognize that there are likely other signiciant factors influencing salary that were not captured in this dataset. Variables such as industry, state, market demand, etc. may all pay crucial roles in salary determination. The absence of these features could have limited the model's overall predicitve capability. 
+
+Future work could involve exploring additional features, experimenting with more sophisticated modeling techniques, or implementing more advanced hyperparameter tuning to further refine the model's predictive capabilities. Incorporating external data sources to address omitted variables may also enhance the model's robustness and accuracy.
+
+## Comparison of Data Sets
+
+When comparing the two datasets (Zip Recruiter and Stack Overflow), we observe that a smaller dataset with fewer features often leads to a predictive model that can more accurately predict the target variable. This is primarily due to the reduced complexity and lower likelihood of overfitting. In contrast, larger and more complex datasets introduce challenges that can hinder predictive accuracy.
+
+In smaller datasets, the relationships between features and the target variable are typically clearer, allowing simpler models to generalize better to unseen data. However, as dataset size and complexity increase, the potential for noise and irrelevant information also rises, complicating the modeling process. Consequently, achieving high predictive accuracy becomes more difficult as the number of features grows and the dataset becomes more intricate.
+
+Overall, while larger datasets can provide more information, they require careful handling to ensure that the additional complexity does not undermine model performance. Finding the right balance between dataset size and model complexity is essential for achieving accurate predictions.
+
+## Sources
+* <a href=https://survey.stackoverflow.co target=_blank>Stack Overvlow Developer Survey</a>
+* <a href=https://github.com/tonythor/data622/blob/main/lussi/ziprecruiter.py target=_blank> Our Zip Recruiter Data Downloader</a>
