@@ -101,8 +101,16 @@ img {
 }
 </style>
 <p style="text-align: center;">
-    <a href=https://github.com/tonythor/data622 target=_blank>Github</a> &nbsp; | &nbsp; <a href=https://rpubs.com/tonythor/data622-project1 target=_blank>Web Presentation</a>
+  [github](https://github.com/tonythor/data622) &nbsp; | &nbsp; [web presentation](https://rpubs.com/tonythor/data622-project1)
 </p>
+
+# Data Sets
+
+This project analyzes two datasets: one from ZipRecruiter and the other from Stack Overflow.
+
+•	ZipRecruiter Dataset: A heavily curated, clean, and well-structured dataset. It offers a tight focus, making it easy to work with and delivering highly accurate predictions.
+
+•	Stack Overflow Dataset: A generation of self-reported survey data, providing valuable insights but requiring more effort to clean and analyze. As we’ll see, while the ZipRecruiter dataset enables near-perfect predictions, the Stack Overflow data presents more challenges due to variability and inconsistencies.
 
 ```{python import_and_load, message=false, warning=false, echo=FALSE}
 import matplotlib.pyplot as plt
@@ -124,15 +132,6 @@ ziprecruiter = load_zip(data_dir = data_dir)
 wide_stack = load_stack(data_dir=data_dir, stack_type=StackType.WIDE)
 
 ```
-
-
-# Data Sets
-
-This project analyzes two datasets: one from ZipRecruiter and the other from Stack Overflow.
-
-•	ZipRecruiter Dataset: A heavily curated, clean, and well-structured dataset. It offers a tight focus, making it easy to work with and delivering highly accurate predictions.
-
-•	Stack Overflow Dataset: A generation of self-reported survey data, providing valuable insights but requiring more effort to clean and analyze. As we’ll see, while the ZipRecruiter dataset enables near-perfect predictions, the Stack Overflow data presents more challenges due to variability and inconsistencies.
 
 ## Data Set 1: Zip Recruiter 
 First, let’s view a sample of the Zip Recruiter dataset:
@@ -266,14 +265,14 @@ us_data['gender_grouped']=us_data['Gender'].apply(group_gender)
 ```
 
 ```{python columns, message=false,warning=false}
-# columns to keep (all features)
-cols_to_keep = ['AnnualSalary','YearsCodeProAvg', 'OrgSizeAvg', 
-                'scala', 'python', 'javascript', 'EdLevel',
-                'postgresql', 'ethnicity_grouped', 'AgeAvg', 
-               'gender_grouped','aws','mysql','redis','sql',
-               'java','ruby','php','c','mongodb',
-               'oracle','ibmdb2','sqlite','kubernetes',
-               'linux','windows']
+# columns to keep (all features but DevType (as there was too self reported to be much use) and US_State (as only 2021 had this info))
+cols_to_keep =['Year', 'Employment', 'EdLevel', 'AnnualSalary',
+       'YearsCodeProAvg', 'OrgSizeAvg', 'AgeAvg', 'python', 'sql', 'java',
+       'javascript', 'ruby', 'php', 'c', 'swift', 'scala', 'r', 'rust',
+       'julia', 'mysql', 'microsoftsqlserver', 'mongodb', 'postgresql',
+       'oracle', 'ibmdb2', 'redis', 'sqlite', 'mariadb', 'microsoftazure',
+       'googlecloud', 'ibmcloudorwatson', 'kubernetes', 'linux', 'windows',
+       'sexuality_grouped', 'ethnicity_grouped', 'aws', 'gender_grouped']
 
 # new dataframe with specific columns
 df_new = us_data[cols_to_keep].copy()
@@ -300,11 +299,11 @@ Below is the distribution of the target variable (AnnualSalary).
 ```{python target-variable-dist, message=false, warning=false, echo=false}
 annualsalary = df_new['AnnualSalary'].dropna()
 
-# Generate the boxplot and encode it in Base64
 plt.figure(figsize=(10, 5))
 plt.boxplot(annualsalary)
 plt.title('Boxplot of Target Variable (AnnualSalary)')
 plt.ylabel('Target Variable Values')
+
 
 # Save the plot to a BytesIO buffer
 img_buf = io.BytesIO()
@@ -321,7 +320,6 @@ img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Boxplot of Targe
 # Display the image
 from IPython.display import display, HTML
 display(HTML(img_html))
-
 ```
 
  As observed, there are outliers in the distribution. We chose to address these using the Interquartile Range (IQR) method because it is a robust technique for detecting and removing extreme values without making assumptions about the data distribution, unlike methods such as z-scores which assume normality. The IQR method is particularly effective when dealing with skewed data, which is common in salary distributions. By focusing on the middle 50% of the data (between the 25th and 75th percentiles), this approach minimizes the impact of extreme outliers that could distort model performance.
@@ -347,6 +345,7 @@ df_filtered = df_new[(df_new['AnnualSalary'] >= lower_bound) & (df_new['AnnualSa
 Here is the distribution post-IQR.
 
 ```{python post-IQR dist, message=false, warning=false, echo=false}
+plt.figure(figsize=(10, 5))
 plt.boxplot(df_filtered['AnnualSalary'])
 plt.title('Boxplot of Target Variable (AnnualSalary)')
 plt.ylabel('Target Variable Values')
@@ -361,7 +360,7 @@ img_buf.seek(0)
 img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
 
 # Generate the HTML for embedding the image
-img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Boxplot of Target Variable (AnnualSalary)" />'
+img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Boxplot of Target Variable (AnnualSalary) Post-IQR" />'
 
 # Display the image
 from IPython.display import display, HTML
@@ -372,11 +371,11 @@ display(HTML(img_html))
 
 For the model, we decided to use XGBoost for the following reasons:
 
-* Large dataset: XGBoost is highly efficient when working with large datasets
+- Large dataset: XGBoost is highly efficient when working with large datasets
 
-* Mixed feature types: The dataset contains both categorical and numeric features, and XGBoost can natively handle this mixture without requiring extensive pre-processing.
+- Mixed feature types: The dataset contains both categorical and numeric features, and XGBoost can natively handle this mixture without requiring extensive pre-processing.
 
-* Missing values: XGBoost can effectively handle missing values by internally learning the best direction to take when encountering them, making it a natural fit for our dataset with some incomplete entries.
+- Missing values: XGBoost can effectively handle missing values by internally learning the best direction to take when encountering them, making it a natural fit for our dataset with some incomplete entries.
 
 We chose not to use Random Forest primarily because it tends to perform better on smaller and less complex datasets. Given the size and intricacy of the Stack Overflow dataset, XGBoost was a better fit due to its scalability and ability to handle high-dimensional, complex data.
 
@@ -455,7 +454,7 @@ We used RandomizedSearchCV instead of GridSearchCV to save time, as it explores 
 By tuning the model in this way, we can ensure that it performs optimally given the complexity and size of the Stack Overflow dataset.
 
 The next step is to use the best model identified through RandomizedSearchCV to make predictions on the test data:
-Given our 
+
 ```{python predict, message=false,warning=false}
 # Predict using the best model
 best_model = random_search.best_estimator_
@@ -482,12 +481,12 @@ print("R²: %f" % r2)
 
 After evaluating the model, we obtained the following performance metrics:
 
-- RMSE: 42,406.54
-- R²: 0.3842
+- RMSE: 40,752.117865
+- R²: 0.431343
 
-The Root Mean Square Error (RMSE) quantifies the average error between the predicted and actual values. In this case, an RMSE of 42,406.54 indicates that, on average, the model's predictions deviate from the actual values by this amount. Lower RMSE values suggest better model performance, making this a critical metric for assessing accuracy. 
+The Root Mean Square Error (RMSE) quantifies the average error between the predicted and actual values. In this case, an RMSE of 40,752.117865 indicates that, on average, the model's predictions deviate from the actual values by this amount. Lower RMSE values suggest better model performance, making this a critical metric for assessing accuracy. 
 
-The R-squared (R²) score measures the proportion of variance in the target variable (Annual Salary) that can be explained by the features included in the model. With an R² value of 0.3842, approximately 38.42% of the variance in Annual Salary is accounted for by the model. While this indicates some explanatory power, there is still a significant portion of the variance (over 61.58%) that remains unexplained, suggesting potential areas for improvement in the model or the inclusion of additional features.
+The R-squared (R²) score measures the proportion of variance in the target variable (Annual Salary) that can be explained by the features included in the model. With an R² value of 0.431343, approximately 43.13% of the variance in Annual Salary is accounted for by the model. While this indicates some explanatory power, there is still a significant portion of the variance (over 56.87%) that remains unexplained, suggesting potential areas for improvement in the model or the inclusion of additional features.
 
 These metrics together provide a solid foundation for evaluating the model's predictive capabilities, emphasizing its strengths while also identifying areas that may require further enhancement.
 
@@ -525,14 +524,13 @@ The plot below illustrates the importance of each feature in relation to the mod
 
 ```{python feature importance, warning=false,message=false,echo=false}
 # Plot feature importance
-fig, ax = plt.subplots(figsize=(10, 5))
-xgb.plot_importance(best_model, importance_type='weight', max_num_features=20, ax=ax)
+xgb.plot_importance(best_model, importance_type='weight', max_num_features=20)
 plt.title('Top Feature Importance')
 
 # Save the plot to a BytesIO buffer
 img_buf = io.BytesIO()
 plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
-plt.close(fig)  # Close the figure to prevent auto-rendering
+plt.close()  # Close the figure to prevent auto-rendering
 
 # Reset buffer position and convert the image to Base64
 img_buf.seek(0)
@@ -551,13 +549,12 @@ We examined the correlation between the features in the training set to identify
 
 ```{python corr, message=false, warning=false, echo=false}
 corr_matrix = df_encoded.drop(columns=['AnnualSalary']).corr()
-fig, ax = plt.subplots(figsize=(12, 8))  # Adjust the size as needed
-sns.heatmap(corr_matrix, annot=True, ax=ax)
+sns.heatmap(corr_matrix, annot=True)
 
 # Save the plot to a BytesIO buffer
 img_buf = io.BytesIO()
 plt.savefig(img_buf, format='png', bbox_inches='tight')  # Save figure to buffer
-plt.close(fig)  # Close the figure to prevent auto-rendering
+plt.close()  # Close the figure to prevent auto-rendering
 
 # Reset buffer position and convert the image to Base64
 img_buf.seek(0)
@@ -587,7 +584,9 @@ To understand how well our model performs, we plotted the residuals (the differe
 Ideally, residuals should be randomly scattered around 0 without any noticeable pattern, indicating that the model is accurately capturing the underlying relationships in the data. In the plot below, the residuals appear to be randomly distributed around 0, which suggests that the model's predictions are not biased in any direction. This randomness supports the validity of the model's performance and suggests that it is effectively fitting the data.
 
 ```{python plots-residuals-vs-predicted, message=false,warning=false,echo=false}
-residuals = Y_test - pred
+residuals = Y_test - pred  # Calculate residuals
+
+# create data frame for plotting
 residuals_df = pd.DataFrame({
     'Actual': Y_test,
     'Predicted': pred,
@@ -681,7 +680,7 @@ Overall, the visualizations of the model through the residuals vs. predicted val
 
 ### Conclusion
 
-In conclusion, our final model accounts for approximately 38.42% of the variability in annual salary and we've demonstrated that XGBoost was a justified model to use for this problem. However, there is still room for improvement. The results suggest that the features included in the model contribute valuable insights into salary, but it is essential to recognize that there are likely other signiciant factors influencing salary that were not captured in this dataset. Variables such as industry, state, market demand, etc. may all pay crucial roles in salary determination. The absence of these features could have limited the model's overall predicitve capability. 
+In conclusion, our final model accounts for approximately 43.13% of the variability in annual salary and we've demonstrated that XGBoost was a justified model to use for this problem. However, there is still room for improvement. The results suggest that the features included in the model contribute valuable insights into salary, but it is essential to recognize that there are likely other signiciant factors influencing salary that were not captured in this dataset. Variables such as industry, state, market demand, etc. may all pay crucial roles in salary determination. The absence of these features could have limited the model's overall predicitve capability. 
 
 Future work could involve exploring additional features, experimenting with more sophisticated modeling techniques, or implementing more advanced hyperparameter tuning to further refine the model's predictive capabilities. Incorporating external data sources to address omitted variables may also enhance the model's robustness and accuracy.
 
@@ -694,5 +693,7 @@ In smaller datasets, the relationships between features and the target variable 
 Overall, while larger datasets can provide more information, they require careful handling to ensure that the additional complexity does not undermine model performance. Finding the right balance between dataset size and model complexity is essential for achieving accurate predictions.
 
 ## Sources
-* <a href=https://survey.stackoverflow.co target=_blank>Stack Overvlow Developer Survey</a>
-* <a href=https://github.com/tonythor/data622/blob/main/lussi/ziprecruiter.py target=_blank> Our Zip Recruiter Data Downloader</a>
+
+- [Stack Overflow Developer Survey](https://survey.stackoverflow.co/)
+
+- [Our Zip Recruiter Data Downloader](https://github.com/tonythor/data622/blob/main/lussi/ziprecruiter.py)
