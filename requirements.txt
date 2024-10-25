@@ -9,7 +9,6 @@ llama-cpp-python==0.1.78
 numpy==1.23.4
 pip
 ipython
-pandas
 nltk
 requests
 wheel
@@ -40,3 +39,6 @@ qgrid
 ipywidgets==7.7.2
 jupyterlab_widgets
 itables
+
+pandas
+pyarrow>=13.0.0
