@@ -43,3 +43,4 @@ itables
 # pip install --upgrade -r requirements.txt
 pandas
 pyarrow>=13.0.0
+ipysheet

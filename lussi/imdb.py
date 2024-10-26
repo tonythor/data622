@@ -13,6 +13,10 @@ import shutil
 from pathlib import Path
 from typing import Optional, Generator, List, Tuple
 from functools import partial
+from time import time
+from datetime import timedelta
+from collections import Counter
+
 
 # Third-party imports
 import numpy as np
@@ -20,6 +24,9 @@ import pandas as pd
 import requests
 from loguru import logger
 import multiprocessing as mp
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
 
 # Constants
 INITIAL_JOIN = "merged_clean.parquet"
@@ -380,3 +387,121 @@ def augment_add_columns(data_dir: str) -> None:
     except Exception as e:
         logger.error(f"Error augmenting dataset: {e}")
         raise
+
+def train_and_evaluate_rf(df, target='rating_bin',
+                         test_size=0.2, n_estimators=100,
+                         random_state=42):
+    """
+    Wrapper for train and evaluate a Random Forest model on the given IMDB dataset.
+    Note this assumes we are trying to evaluate the "rating_bin" column from augment_add_columns.
+    
+    Parameters:
+    -----------
+    df                 : pandas DataFrame          : Input DataFrame containing features and target
+    target             : str, default='rating_bin' : Name of the target column
+    test_size          : float, default=0.2        : Proportion of dataset to include in the test split
+    n_estimators       : int, default=100          : Number of trees in the forest
+    random_state       : int, default=42           : Random state for reproducibility
+
+    Returns:
+    --------
+    rf_model           : Trained RandomForestRegressor model
+    feature_importance : DataFrame with feature importance
+    metrics            : Tuple with R2 score and RMSE
+    predictions        : Tuple of (y_test, y_pred) for summary reporting
+    """
+
+    start_time = time()
+
+    # Separate features and target
+    X = df.drop(target, axis=1)
+    y = df[target]
+
+    # Split the data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+
+    # Train the Random Forest model
+    rf_model = RandomForestRegressor(
+        n_estimators=n_estimators, 
+        random_state=random_state
+    )
+    rf_model.fit(X_train, y_train)
+
+    # Feature importance
+    feature_importance = pd.DataFrame({
+        'feature': X.columns,
+        'importance': rf_model.feature_importances_
+    }).sort_values('importance', ascending=False)
+
+    print("Top 10 most important features:")
+    print(feature_importance.head(10))
+
+    # Make predictions and calculate metrics
+    y_pred = rf_model.predict(X_test)
+    r2 = r2_score(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    print("\nModel Performance:")
+    print(f"R2 Score: {r2:.3f}")
+    print(f"Root Mean Squared Error: {rmse:.3f}")
+
+    # Calculate elapsed time
+    end_time = time()
+    elapsed_time = timedelta(seconds=end_time - start_time)
+    print(f"\nTotal model train and execution time: {elapsed_time}")
+
+    return rf_model, feature_importance, (r2, rmse), (y_test, y_pred)
+
+
+def generate_summary_report(y_test, y_pred, show_output=True):
+    """
+    Generate a friendly, human-readable summary of the model's performance.
+
+    Parameters:
+    -----------
+    y_test      : array : Ground truth target values
+    y_pred      : array : Predicted target values
+    show_output : bool  : Whether to print the summary report directly
+
+    Returns:
+    --------
+    str : A formatted summary report of the model's performance
+    """
+    # Round predictions for comparison
+    y_pred_rounded = np.round(y_pred)
+
+    # Calculate key metrics
+    exact_matches = (y_pred_rounded == y_test).mean()
+    close_predictions = (abs(y_pred_rounded - y_test) <= 1).mean()
+    differences = Counter(y_pred_rounded - y_test)
+
+    # Calculate additional insights
+    major_errors = sum(v for k, v in differences.items() if abs(k) >= 3) / len(y_test)
+    zero_bin_percentage = differences.get(0, 0) / len(y_test)
+    close_bin_percentage = close_predictions * 100 - zero_bin_percentage * 100
+
+    # Build the summary report
+    summary = (
+        f"**Accuracy Measures:**\n"
+        f"- {exact_matches:.2%} exact matches (got the rating bin exactly right)\n"
+        f"- {close_predictions:.2%} within 1 bin (either exact or just one bin off)\n\n"
+        f"**Distribution of Errors:**\n"
+        f"- {zero_bin_percentage:.1%} perfect predictions (0 bins off)\n"
+        f"- {close_bin_percentage:.1%} off by just 1 bin "
+        f"({differences.get(-1, 0) / len(y_test):.1%} low + {differences.get(1, 0) / len(y_test):.1%} high)\n"
+        f"- Only {100 - close_predictions * 100:.1f}% off by more than 1 bin\n"
+        f"- Major mistakes (off by 3 or more bins): {major_errors:.1%}\n\n"
+        f"**Putting It in Perspective:**\n"
+        f"If you're trying to predict if a movie is 'good' (7–8), 'great' (8–9), "
+        f"or 'excellent' (9–10), you'll be within the right range {close_predictions:.2%} of the time.\n"
+        f"Major errors are pretty rare, happening less than {major_errors * 100:.1f}% of the time.\n"
+        f"The errors are fairly symmetrical, with similar numbers of over- and under-predictions.\n\n"
+        f"This is quite good for something as subjective as movie ratings, especially considering:\n"
+    )
+
+    if show_output:
+        print(summary)
+
+    return summary
