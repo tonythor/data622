@@ -183,4 +183,4 @@ generate_summary_report(*predictions2)
 
 ## Conclusion
 
-Our results show that, with around 80% accuracy, we can predict movie ratings within one rating bin using features like actor experience, genre, and runtime. Including vote counts in the model slightly improved performance but introduced bias, as it reflects audience reception rather than the movie’s intrinsic properties. Without votes, the model still performed well, confirming that carefully engineered features provide meaningful insights. This project demonstrates that Random Forest is a viable approach for predicting IMDB ratings, even when financial data is not available.
+Our results show that, with around 80% accuracy, we can predict movie ratings within one rating bin using features like actor experience, genre, and runtime. Including vote counts in the model slightly improved performance but introduced bias. Without votes, the model still performed well, confirming that carefully engineered features provide meaningful insights. This project demonstrates that Random Forest is a viable approach for predicting IMDB ratings, even when financial data is not available.
