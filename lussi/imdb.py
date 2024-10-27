@@ -211,7 +211,7 @@ def initial_load_and_merge(data_dir: str) -> None:
             compression="zstd",
             version="2.0",
             use_dictionary=True,
-            DICTIONARY_PAGESIZE_LIMIT=DICTIONARY_PAGESIZE_LIMIT
+            dictionary_pagesize_limit=DICTIONARY_PAGESIZE_LIMIT
         )
         logger.info(f"Merged dataset saved to: {output_path}")
         end_time = time()
@@ -510,6 +510,6 @@ def prebuild():
     Call this only if you've not prebuilt your data directory already.
     """
     data_dir ="622data_nogit/imdb"
-    download_imdb_data(data_dir)
+    # download_imdb_data(data_dir)
     initial_load_and_merge(data_dir)
     augment_add_columns(data_dir)

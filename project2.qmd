@@ -105,16 +105,6 @@ img {
   [github](https://github.com/tonythor/data622) &nbsp; | &nbsp; [web presentation](https://rpubs.com/tonythor/data622-project2)
 </p>
 
-```{python load, message=false, warning=false, echo=FALSE}
-
-data_dir = "622data_nogit/imdb"
-from lussi.imdb import *
-from lussi.glimpse import *
-
-# df = load_imdb(data_dir)
-# # glimpse(df) # before stripping string columns
-# glimpse(df)
-```
 
 ## Project Overview
 In this project, we set out to use Random Forest on the [IMDB non-commercial dataset](https://developer.imdb.com/non-commercial-datasets/)to predict movie ratings. While the dataset lacks financial performance metrics like box office revenue or streaming views, it provides key features such as ratings, genres, and cast information, which became the foundation of our analysis.
@@ -160,10 +150,37 @@ Below is a summary of the calculated columns added and their purpose:
   Each genre is expanded into a binary (0/1) column. Provides genre-specific features to analyze how genres influence ratings.
 
 
+## Data Overview
+```{python load, message=false, warning=false, echo=FALSE}
+# data_dir = "622data_nogit/imdb"
+# from lussi.imdb import *
+# from lussi.glimpse import *
+# df = load_imdb(data_dir)
+# glimpse(df)
+```
+
+
+## Random Forest Models
+
+### Assumes number of votes
+To test the model, let's run it against the dataset, and we'll leave the number of reviews column in. This doesn't make sense, why would we try to predict records that were allready reviewed? But let's check the model anyway.
 
 ```{python imdb}
-## This assumes a number of votes already. Unlikely. 
-# df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actorNames'])
+# This assumes a number of votes already. Unlikely. 
+# df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names'])
 # model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1)
 # generate_summary_report(*predictions1)
 ```
+
+### Assumes no votes
+This is more likely. We'll get a record, it'll be new and with no votes, and we'll try to predict the ratings from here.
+```{python imdb}
+# This is a new program with no votes at all. 
+# df_dropped2 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names', 'numVotes'])
+# model2, importance2, metrics2, predictions2 = train_and_evaluate_rf(df_dropped2)
+# generate_summary_report(*predictions2)
+```
+
+## Conclusion
+
+Within about 80% accuracy, if we have a record of IMDB, we add in the records calculated above, we can get mostly accurate informaiton within a point or two, based mostly on the properties of the actors, the genre, adn the run time. 
