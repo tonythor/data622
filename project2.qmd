@@ -1,0 +1,169 @@
+---
+title: "Project 2: IMDB Ratings using Random Forest"
+author: "Team: I Love Lucy"
+date: "2 Nov 2024"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    self_contained: true
+python: 
+  jupyter: data622
+execute:
+#  echo: false
+  warning: false
+  message: false
+  freeze: auto
+---
+<style>
+.quarto-title-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.quarto-title-meta-heading {
+    font-weight: bold;
+}
+
+.quarto-title-meta-contents {
+    margin-right: 20px;
+}
+
+body {
+    width: 900px; /* Lock the body width to 900px */
+    font-family: Arial, sans-serif;
+    margin: 0 auto; /* Center the body */
+    background-color: white; /* Set background to white */
+}
+
+/* Flexbox container for title and author */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px; /* Add space below the header */
+}
+
+.header-container h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+
+.header-container .meta-info {
+    text-align: right; /* Align the meta information (author, date) to the right */
+    font-size: 1.2em;
+    margin: 0;
+}
+
+h2, h3, h4, h5, h6 {
+    font-family: Arial, sans-serif;
+    margin: 0 0 10px 0; /* Reduce the bottom margin for more compact headers */
+    padding: 0; /* Remove padding */
+    line-height: 1.2; /* Control the line spacing */
+}
+
+/* Adjust table and image styles */
+table {
+    width: 100%; /* Make table full width within the 900px body */
+    border-collapse: collapse;
+    max-width: 100%;
+    margin-left: auto;  /* Center the table */
+    margin-right: auto; /* Center the table */
+    overflow-x: auto; /* Allow horizontal scrolling if the table is too wide */
+    display: block;
+}
+
+table, th, td {
+    border: 1px solid lightgray;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+/* Custom figure sizing */
+.figure {
+    width: 100%; /* Ensure figures take full width within the 900px body */
+    margin-left: auto;  /* Center figure */
+    margin-right: auto; /* Center figure */
+}
+
+img {
+    max-width: 100%;  /* Ensure images take full width within the 900px body */
+    height: auto;
+    display: block;
+    margin-left: auto;  /* Center image */
+    margin-right: auto; /* Center image */
+}
+</style>
+<!-- build with:  ./build.sh -p 2 -h -->
+<p style="text-align: center;">
+  [github](https://github.com/tonythor/data622) &nbsp; | &nbsp; [web presentation](https://rpubs.com/tonythor/data622-project2)
+</p>
+
+```{python load, message=false, warning=false, echo=FALSE}
+
+data_dir = "622data_nogit/imdb"
+from lussi.imdb import *
+from lussi.glimpse import *
+
+# df = load_imdb(data_dir)
+# # glimpse(df) # before stripping string columns
+# glimpse(df)
+```
+
+## Project Overview
+In this project, we set out to use Random Forest on the [IMDB non-commercial dataset](https://developer.imdb.com/non-commercial-datasets/)to predict movie ratings. While the dataset lacks financial performance metrics like box office revenue or streaming views, it provides key features such as ratings, genres, and cast information, which became the foundation of our analysis.
+
+One of the biggest challenges we encountered was the sheer number of unique actors. With millions of actors in the dataset, one-hot encoding was not practical. To address this, we developed a system to measure actor experience through an average-based metric and a Likert-scale score for each movie’s cast, giving us a way to quantify experience without overwhelming the model.
+
+Despite the challenges, our efforts paid off. From the initial runs, we achieved promising predictive results, showing that thoughtful feature engineering can unlock valuable insights even in large, complex datasets.
+
+## Data Preparation
+
+Our workflow to prepare the data consisted of three stages:
+
+1. **Download the Raw Datasets**  
+   We downloaded multiple IMDB datasets, such as **ratings**, **basics**, and **principals**, and saved them locally for processing.
+
+2. **Merge Datasets by Movie Title**  
+   Using each movie's unique identifier (`tconst`), we merged datasets to create a **single, consolidated DataFrame**, which we persisted for efficiency.
+
+3. **Add Calculated Columns**  
+   After merging, we added several **calculated columns** (detailed below) to enrich the data with features like **actor experience** and **genre dummy variables** for better predictive power.
+
+
+## Calculated Columns Overview
+
+Below is a summary of the calculated columns added and their purpose:
+
+- **`num_actors`**:  
+  Total number of actors in each movie. Helps capture the cast size.
+
+- **`actor_names`**:  
+  A string of all actor names for each movie, separated by commas. Useful for analyzing trends or patterns based on cast members.
+
+- **`experienced_actor_count`**:  
+  Counts the number of experienced actors (those with more than 10 prior roles) in a movie. Measures the potential impact of experience on quality or reception.
+
+- **`experienced_actors_likert`**:  
+  A Likert-scale score (1–5) based on the average experience of the cast. Quantifies cast experience for easier analysis of its effect on ratings.
+
+- **`rating_bin`**:  
+  Binned version of the average rating (e.g., 1–10). Simplifies predictions by grouping continuous ratings into categories, which aligns with classification models like Random Forest.
+
+- **Genre Dummy Variables**:  
+  Each genre is expanded into a binary (0/1) column. Provides genre-specific features to analyze how genres influence ratings.
+
+
+
+```{python imdb}
+## This assumes a number of votes already. Unlikely. 
+# df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actorNames'])
+# model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1)
+# generate_summary_report(*predictions1)
+```
