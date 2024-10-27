@@ -6,9 +6,7 @@ Class: CUNY Data 622
 October 2024
 
 
-
-[Project 1 Presentation](https://rpubs.com/tonythor/data622-project1)
-[Project 2 Presentation](https://rpubs.com/tonythor/data622-project2)
+Presentations: [[Project 1](https://rpubs.com/tonythor/data622-project1)] [[Project 2](https://rpubs.com/tonythor/data622-project2)]
 
 ```shell
 
