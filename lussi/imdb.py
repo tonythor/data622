@@ -209,7 +209,7 @@ def initial_load_and_merge(data_dir: str) -> None:
             index=False,
             engine="pyarrow",
             compression="zstd",
-            version="2.0",
+            version="2.4",
             use_dictionary=True,
             dictionary_pagesize_limit=DICTIONARY_PAGESIZE_LIMIT
         )
@@ -380,7 +380,7 @@ def augment_add_columns(data_dir: str) -> None:
             compression="zstd",
             version="2.4",
             use_dictionary=True,
-            DICTIONARY_PAGESIZE_LIMIT=DICTIONARY_PAGESIZE_LIMIT
+            dictionary_pagesize_limit=DICTIONARY_PAGESIZE_LIMIT
         )
         logger.info(f"Augmented dataset saved to: {output_path}")
         end_time = time()
@@ -511,5 +511,5 @@ def prebuild():
     """
     data_dir ="622data_nogit/imdb"
     # download_imdb_data(data_dir)
-    initial_load_and_merge(data_dir)
-    augment_add_columns(data_dir)
+    # initial_load_and_merge(data_dir)
+   # augment_add_columns(data_dir)

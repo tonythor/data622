@@ -152,35 +152,35 @@ Below is a summary of the calculated columns added and their purpose:
 
 ## Data Overview
 ```{python load, message=false, warning=false, echo=FALSE}
-# data_dir = "622data_nogit/imdb"
-# from lussi.imdb import *
-# from lussi.glimpse import *
-# df = load_imdb(data_dir)
-# glimpse(df)
+data_dir = "622data_nogit/imdb"
+from lussi.imdb import *
+from lussi.glimpse import *
+df = load_imdb(data_dir)
+glimpse(df)
 ```
 
 
 ## Random Forest Models
 
 ### Assumes number of votes
-To test the model, let's run it against the dataset, and we'll leave the number of reviews column in. This doesn't make sense, why would we try to predict records that were allready reviewed? But let's check the model anyway.
+While using the number of votes doesn't make sense, we included it to test the model. This feature reflects audience reception after a movie's release, so incorporating it could skew the predictions and introduce bias. 
 
 ```{python imdb}
-# This assumes a number of votes already. Unlikely. 
-# df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names'])
-# model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1)
-# generate_summary_report(*predictions1)
+#This assumes a number of votes already. Unlikely. 
+df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names'])
+model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1)
+generate_summary_report(*predictions1)
 ```
 
 ### Assumes no votes
 This is more likely. We'll get a record, it'll be new and with no votes, and we'll try to predict the ratings from here.
 ```{python imdb}
 # This is a new program with no votes at all. 
-# df_dropped2 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names', 'numVotes'])
-# model2, importance2, metrics2, predictions2 = train_and_evaluate_rf(df_dropped2)
-# generate_summary_report(*predictions2)
+df_dropped2 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names', 'numVotes'])
+model2, importance2, metrics2, predictions2 = train_and_evaluate_rf(df_dropped2)
+generate_summary_report(*predictions2)
 ```
 
 ## Conclusion
 
-Within about 80% accuracy, if we have a record of IMDB, we add in the records calculated above, we can get mostly accurate informaiton within a point or two, based mostly on the properties of the actors, the genre, adn the run time. 
+Our results show that, with around 80% accuracy, we can predict movie ratings within one rating bin using features like actor experience, genre, and runtime. Including vote counts in the model slightly improved performance but introduced bias, as it reflects audience reception rather than the movie’s intrinsic properties. Without votes, the model still performed well, confirming that carefully engineered features provide meaningful insights. This project demonstrates that Random Forest is a viable approach for predicting IMDB ratings, even when financial data is not available.
