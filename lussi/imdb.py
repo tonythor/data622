@@ -509,7 +509,7 @@ def prebuild():
     """
     Call this only if you've not prebuilt your data directory already.
     """
-    data_dir ="622data_nogit/imdb"
-    # download_imdb_data(data_dir)
-    # initial_load_and_merge(data_dir)
-   # augment_add_columns(data_dir)
+    data_dir="622data_nogit/imdb"
+    download_imdb_data(data_dir)
+    initial_load_and_merge(data_dir)
+    augment_add_columns(data_dir)
