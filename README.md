@@ -8,6 +8,7 @@ October 2024
 
 
 [Project 1 Presentation](https://rpubs.com/tonythor/data622-project1)
+[Project 2 Presentation](https://rpubs.com/tonythor/data622-project2)
 
 ```shell
 
