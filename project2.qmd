@@ -170,6 +170,7 @@ While using the number of votes doesn't make sense, we included it to test the m
 df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names'])
 model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1)
 generate_summary_report(*predictions1)
+display(plot_importance(importance1))
 ```
 
 ### Assumes no votes
@@ -179,6 +180,7 @@ This is more likely. We'll get a record, it'll be new and with no votes, and we'
 df_dropped2 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names', 'numVotes'])
 model2, importance2, metrics2, predictions2 = train_and_evaluate_rf(df_dropped2)
 generate_summary_report(*predictions2)
+display(plot_importance(importance2))
 ```
 
 ## Conclusion

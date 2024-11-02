@@ -5,25 +5,31 @@ Includes cross-platform support, memory-efficient chunking, and robust error han
 More on the dataset: https://developer.imdb.com/non-commercial-datasets/
 """
 
-# Standard library imports
-import os
 import gc
 import gzip
 import shutil
-from pathlib import Path
-from typing import Optional, Generator, List, Tuple
-from functools import partial
-from time import time
-from datetime import timedelta
 from collections import Counter
-import multiprocessing as mp
+from datetime import timedelta
+from functools import partial
+from io import BytesIO
+from pathlib import Path
+import base64
+from time import time
+from typing import Generator, List, Optional, Tuple
+
+# Third-party imports
 import numpy as np
 import pandas as pd
+import plotly.express as px
+import plotly.io as pio
 import requests
+from IPython.display import HTML
 from loguru import logger
-from sklearn.model_selection import train_test_split
+import multiprocessing as mp
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+
 
 # Constants
 INITIAL_JOIN = "merged_clean.parquet"
@@ -346,6 +352,7 @@ def add_rating_bins_and_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.astype({col: 'category' for col in df.select_dtypes(['object']).columns})
 
     return df.dropna(subset=['rating_bin', 'runtimeMinutes'])
+
 def augment_add_columns(data_dir: str) -> None:
     """
     Optimized main augmentation function with better memory management and parallel processing.
@@ -437,15 +444,15 @@ def train_and_evaluate_rf(df, target='rating_bin',
         'importance': rf_model.feature_importances_
     }).sort_values('importance', ascending=False)
 
-    print("Top 10 most important features:")
-    print(feature_importance.head(10))
+    # print("Top 10 most important features:")
+    # print(feature_importance.head(10))
 
     # Make predictions and calculate metrics
     y_pred = rf_model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 
-    print("\nModel Performance:")
+    print("Model Performance:")
     print(f"R2 Score: {r2:.3f}")
     print(f"Root Mean Squared Error: {rmse:.3f}")
 
@@ -487,7 +494,6 @@ def generate_summary_report(y_test, y_pred):
 
     # Build the summary report
     summary = (
-        f"\n"
         f"**Accuracy Measures:**\n"
         f"- {exact_matches:.2%} exact matches (got the rating bin exactly right)\n"
         f"- {close_predictions:.2%} within 1 bin (either exact or just one bin off)\n\n"
@@ -504,6 +510,67 @@ def generate_summary_report(y_test, y_pred):
     )
 
     print(summary)
+
+
+
+def plot_importance(importance_df, top_n=10):
+    """
+    Create horizontal feature importance plot and return base64 encoded image for Quarto.
+    
+    Parameters:
+    -----------
+    importance_df : pandas DataFrame
+        DataFrame with 'feature' and 'importance' columns
+    top_n : int, default=10
+        Number of top features to show
+        
+    Returns:
+    --------
+    HTML : IPython.display.HTML
+        HTML object containing the base64 encoded image
+    """
+    # Take top N features but reverse order for bottom-to-top display
+    plot_df = importance_df.head(top_n).iloc[::-1]
+    
+    # Create horizontal bar plot
+    fig = px.bar(
+        plot_df,
+        y='feature',
+        x='importance',
+        text=plot_df['importance'].round(3),
+        title='Top Feature Importances',
+        labels={'importance': 'Importance Score', 'feature': 'Feature'},
+        orientation='h'
+    )
+    
+    # Customize layout
+    fig.update_layout(
+        width=800,
+        height=500,
+        showlegend=False,
+        title_x=0.5,
+        margin=dict(t=50, l=200, r=50, b=50),
+        yaxis={'dtick': 1}
+    )
+    
+    # Customize bars
+    fig.update_traces(
+        marker_color='#2563eb',
+        textposition='outside',
+        texttemplate='%{text:.3f}'
+    )
+    
+    # Convert plotly figure to PNG image
+    img_bytes = pio.to_image(fig, format="png")
+    
+    # Encode the image to base64
+    img_base64 = base64.b64encode(img_bytes).decode('utf-8')
+    
+    # Create HTML for the image
+    img_html = f'<img src="data:image/png;base64,{img_base64}" alt="Feature Importance Plot" />'
+    
+    return HTML(img_html)
+
 
 def prebuild():
     """
