@@ -661,7 +661,7 @@ def train_and_evaluate_svm_optimized(df, target='rating_bin', test_size=0.2, ker
     random_state : int : Random state for reproducibility (default=42)
     cache_path : str : Where to save/load model (default='svm_model_opt.joblib')
     rerun : bool : Whether to force retraining (default=False)
-    sample_size : int : Total sample size to use (default=10000)
+    sample_size : int : Total sample size to use (default=50000)
     
     Returns:
     --------
