@@ -1,0 +1,260 @@
+---
+title: "Project 3: IMDB Ratings, comparing Random Forest to Support Vector Machines"
+author: "Team: I Love Lucy"
+date: "2 Nov 2024"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    self_contained: true
+python: 
+  jupyter: data622
+execute:
+#  echo: false
+  warning: false
+  message: false
+  freeze: auto
+---
+<style>
+.quarto-title-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.quarto-title-meta-heading {
+    font-weight: bold;
+}
+
+.quarto-title-meta-contents {
+    margin-right: 20px;
+}
+
+body {
+    width: 900px; /* Lock the body width to 900px */
+    font-family: Arial, sans-serif;
+    margin: 0 auto; /* Center the body */
+    background-color: white; /* Set background to white */
+}
+
+/* Flexbox container for title and author */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px; /* Add space below the header */
+}
+
+.header-container h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+
+.header-container .meta-info {
+    text-align: right; /* Align the meta information (author, date) to the right */
+    font-size: 1.2em;
+    margin: 0;
+}
+
+h2, h3, h4, h5, h6 {
+    font-family: Arial, sans-serif;
+    margin: 0 0 10px 0; /* Reduce the bottom margin for more compact headers */
+    padding: 0; /* Remove padding */
+    line-height: 1.2; /* Control the line spacing */
+}
+
+/* Adjust table and image styles */
+table {
+    width: 100%; /* Make table full width within the 900px body */
+    border-collapse: collapse;
+    max-width: 100%;
+    margin-left: auto;  /* Center the table */
+    margin-right: auto; /* Center the table */
+    overflow-x: auto; /* Allow horizontal scrolling if the table is too wide */
+    display: block;
+}
+
+table, th, td {
+    border: 1px solid lightgray;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+/* Custom figure sizing */
+.figure {
+    width: 100%; /* Ensure figures take full width within the 900px body */
+    margin-left: auto;  /* Center figure */
+    margin-right: auto; /* Center figure */
+}
+
+img {
+    max-width: 100%;  /* Ensure images take full width within the 900px body */
+    height: auto;
+    display: block;
+    margin-left: auto;  /* Center image */
+    margin-right: auto; /* Center image */
+}
+</style>
+<!-- build with:  ./build.sh -p 2 -h -->
+<p style="text-align: center;">
+  [github](https://github.com/tonythor/data622) &nbsp; | 
+  &nbsp; [project 2](https://rpubs.com/tonythor/data622-project2) |
+  &nbsp; [project 3](https://rpubs.com/tonythor/data622-project3)
+</p>
+
+## Project Overview
+
+Building on the work from Project 2 where we used Random Forest to predict movie ratings, this project explores the application of Support Vector Machines (SVM) for the same goal of predicting movie ratings using the [IMDB non-commercial dataset](https://developer.imdb.com/non-commercial-datasets/). Our objective is to compare the performance of SVM and Random Forest, examining their strengths in prediction accuracy and their effectiveness for this classification task.
+
+The IMDB dataset provides essential features, including ratings, genres, and cast details, which we used previously to build a predictive model. Although it lacks financial metrics such as box office revenue or streaming views, this data offers valuable insights into potential predictors of movie ratings. Like before, a primary challenge lies in handling the vast number of unique actors, which we addressed in Project 2 by creating numeric fields to represent cast characteristics. In this project, we’ll re-utilize those engineered features—such as the Likert score for cast experience and an average experience metric—to maintain consistency and comparability across the models.
+
+## Project Workflow
+
+Our workflow to prepare the data consisted of three stages:
+
+1. **Data Overview**
+
+2. **Review project 2:predictions, effectiveness**  
+
+3. **Run the similar workflow, except through SVM**  
+
+4. **Compare**  
+
+5. **Conclude** 
+
+## Data Overview
+```{python load, message=false, warning=false, echo=FALSE}
+data_dir = "622data_nogit/imdb"
+from lussi.imdb import *
+from lussi.glimpse import *
+df = load_imdb(data_dir)
+glimpse(df)
+```
+
+#### Reminder: Calculated Columns Overview
+
+Below is a summary of the calculated columns added and their purpose:
+
+- **`num_actors`**:  
+  Total number of actors in each movie. Helps capture the cast size.
+
+- **`actor_names`**:  
+  A string of all actor names for each movie, separated by commas. Useful for analyzing trends or patterns based on cast members.
+
+- **`experienced_actor_count`**:  
+  Counts the number of experienced actors (those with more than 10 prior roles) in a movie. Measures the potential impact of experience on quality or reception.
+
+- **`experienced_actors_likert`**:  
+  A Likert-scale score (1–5) based on the average experience of the cast. Quantifies cast experience for easier analysis of its effect on ratings.
+
+- **`rating_bin`**:  
+  Binned version of the average rating (e.g., 1–10). Simplifies predictions by grouping continuous ratings into categories, which aligns with classification models like Random Forest.
+
+- **Genre Dummy Variables**:  
+  Each genre is expanded into a binary (0/1) column. Provides genre-specific features to analyze how genres influence ratings.
+
+
+
+## Project 2, Random Forest Review
+
+This is straight from project 2's code base.
+Dude. 
+
+```{python rf}
+#This assumes a number of votes already. Unlikely. 
+df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names'])
+model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1)
+generate_summary_report(*predictions1)
+```
+
+
+## IMDB using SVM, First Run
+For this first run, we'll use almost exactly the same code base and data as we did with the Random Forest run. We will only swap the algorithm.
+ 
+```{python svm1}
+
+# Drop unnecessary columns
+df_dropped2 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names']).dropna(subset=['num_actors'])
+df_sampled = df_dropped2.sample(frac=0.05, random_state=42)  # Adjust frac as needed
+model2, metrics2, predictions2 = train_and_evaluate_svm(df_sampled, kernel='linear')
+generate_summary_report(*predictions2)
+```
+
+
+## Comparing RF with SVM Run One
+
+### Project 2 Random Forest Performance:
+
+* 42.25% exact matches
+* 84.10% within 1 bin
+* Only 4% major errors (off by 3+ bins)
+* R² Score: 0.320
+* RMSE: 1.130
+
+### SVM First Run Performance:
+
+* 27.16% exact matches
+* 64.38% within 1 bin
+* 19.5% major errors
+* R² Score: -3186.443 (extremely poor)
+* RMSE: 78.555 (extremely high)
+
+### Comparison -> Random Forest wins on all fronts:
+
+* Better exact matches (42% vs 27%)
+* Better near matches (84% vs 64%)
+* Far fewer major errors (4% vs 19.5%)
+* Much better R² score (0.32 vs -3186)
+* Much better RMSE (1.13 vs 78.56)
+* SVM's extremely negative R² score suggests it's performing worse than a horizontal line would. 
+
+### Why Random Forest Performs Better:
+
+* Better handles the mixed data types
+* Can capture non-linear relationships
+* More robust to outliers
+* Handles the categorical nature of genre features better
+* Better with high-dimensional data (we have 37 features)
+
+### What we could have done differently or better:
+
+* We used a linear kernel which might be too simple for this data. We could have used the RBF kernel 
+* We sampled only 5% of the data to train
+* SVMs typically need more feature scaling/normalization. We didn't do any of that
+
+## Running the model with dedicated SVM adjustments.
+For this, we've made several SVM specific modifications we will cover in the comparison section. 
+
+```{python svm2}
+df_dropped3 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names']).dropna(subset=['num_actors'])
+model3, metrics3, predictions3 = train_and_evaluate_svm_optimized(df_dropped3)
+generate_summary_report(*predictions3)
+```
+
+### Comparing SVM Optimized run with SVM First Run: 
+
+
+* Uses the RBF (Radial Basis Function) kernel instead of linear - better for non-linear relationships
+* Uses stratified sampling to ensure balanced representation of rating bins
+* Added feature scaling (StandardScaler) - crucial for SVM performance
+* Reduced sample size to 50,000 rows total
+* Better R² score (0.285 vs -3186.443)
+* Much better RMSE (2.184 vs 78.555)
+* Slightly lower accuracy (55% vs 64% within 1 bin), possibly due to smaller but more balanced sample
+* Similar exact match rate (22% vs 27%)
+* Slightly higher major error rate (24% vs 20%)
+
+Despite these improvements, Random Forest still significantly outperforms both SVM approaches for this particular problem.
+
+
+## Conclusions 
+This data is more easily predicted using Random Forest. The dataset contains 37 features, making it highly dimensional, and includes a mix of binary features (like genre indicators) and continuous features (like runtime and number of votes). There are likely non-linear relationships between features (such as how actor experience influences ratings differently at different budget levels) and complex interactions between features (like how certain genres might amplify or diminish the impact of other features).
+
+Random Forest works better because it naturally handles these complexities. It doesn't require feature scaling since each decision tree makes binary splits, handles mixed data types seamlessly, and automatically captures feature interactions through its tree structure. Its ensemble nature means it can effectively model non-linear relationships, and its random feature sampling at each split makes it particularly well-suited for high-dimensional data. These characteristics make Random Forest a natural fit for this kind of complex, heterogeneous dataset, as demonstrated by its superior performance (84% accuracy within one rating bin compared to SVM's 55%).
+
+

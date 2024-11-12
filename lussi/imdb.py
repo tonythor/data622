@@ -4,7 +4,7 @@ Includes cross-platform support, memory-efficient chunking, and robust error han
 
 More on the dataset: https://developer.imdb.com/non-commercial-datasets/
 """
-
+import os
 import gc
 import gzip
 import shutil
@@ -16,7 +16,7 @@ from pathlib import Path
 import base64
 from time import time
 from typing import Generator, List, Optional, Tuple
-
+from sklearn.preprocessing import StandardScaler
 # Third-party imports
 import numpy as np
 import pandas as pd
@@ -27,9 +27,10 @@ from IPython.display import HTML
 from loguru import logger
 import multiprocessing as mp
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
-
+import joblib  # joblib is useful for saving/loading large models
 
 # Constants
 INITIAL_JOIN = "merged_clean.parquet"
@@ -397,12 +398,77 @@ def augment_add_columns(data_dir: str) -> None:
         logger.error(f"Error augmenting dataset: {e}")
         raise
 
-def train_and_evaluate_rf(df, target='rating_bin',
-                         test_size=0.2, n_estimators=100,
-                         random_state=42):
+# def train_and_evaluate_rf(df, target='rating_bin',
+#                          test_size=0.2, n_estimators=100,
+#                          random_state=42):
+#     """
+#     Wrapper for train and evaluate a Random Forest model on the given IMDB dataset.
+#     Note this assumes we are trying to evaluate the "rating_bin" column from augment_add_columns.
+    
+#     Parameters:
+#     -----------
+#     df                 : pandas DataFrame          : Input DataFrame containing features and target
+#     target             : str, default='rating_bin' : Name of the target column
+#     test_size          : float, default=0.2        : Proportion of test split
+#     n_estimators       : int, default=100          : Number of trees in the forest
+#     random_state       : int, default=42           : Random state for reproducibility
+
+#     Returns:
+#     --------
+#     rf_model           : Trained RandomForestRegressor model
+#     feature_importance : DataFrame with feature importance
+#     metrics            : Tuple with R2 score and RMSE
+#     predictions        : Tuple of (y_test, y_pred) for summary reporting
+#     """
+
+#     start_time = time()
+
+#     # Separate features and target
+#     X = df.drop(target, axis=1)
+#     y = df[target]
+
+#     # Split the data into train and test sets
+#     X_train, X_test, y_train, y_test = train_test_split(
+#         X, y, test_size=test_size, random_state=random_state
+#     )
+
+#     # Train the Random Forest model
+#     rf_model = RandomForestRegressor(
+#         n_estimators=n_estimators, 
+#         random_state=random_state
+#     )
+#     rf_model.fit(X_train, y_train)
+
+#     # Feature importance
+#     feature_importance = pd.DataFrame({
+#         'feature': X.columns,
+#         'importance': rf_model.feature_importances_
+#     }).sort_values('importance', ascending=False)
+
+#     # print("Top 10 most important features:")
+#     # print(feature_importance.head(10))
+
+#     # Make predictions and calculate metrics
+#     y_pred = rf_model.predict(X_test)
+#     r2 = r2_score(y_test, y_pred)
+#     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+#     print("Model Performance:")
+#     print(f"R2 Score: {r2:.3f}")
+#     print(f"Root Mean Squared Error: {rmse:.3f}")
+
+#     # Calculate elapsed time
+#     end_time = time()
+#     elapsed_time = timedelta(seconds=end_time - start_time)
+#     print(f"\nTotal model train and execution time: {elapsed_time} \n")
+
+#     return rf_model, feature_importance, (r2, rmse), (y_test, y_pred)
+
+
+def train_and_evaluate_rf(df, target='rating_bin', test_size=0.2, n_estimators=100,
+                          random_state=42, cache_path='rf_model.joblib', rerun=False):
     """
-    Wrapper for train and evaluate a Random Forest model on the given IMDB dataset.
-    Note this assumes we are trying to evaluate the "rating_bin" column from augment_add_columns.
+    Train and evaluate a Random Forest model on the given IMDB dataset with caching option.
     
     Parameters:
     -----------
@@ -411,6 +477,8 @@ def train_and_evaluate_rf(df, target='rating_bin',
     test_size          : float, default=0.2        : Proportion of test split
     n_estimators       : int, default=100          : Number of trees in the forest
     random_state       : int, default=42           : Random state for reproducibility
+    cache_path         : str, default='rf_model.joblib' : Path to cache the trained model
+    rerun              : bool, default=False       : If False, load cached model if available
 
     Returns:
     --------
@@ -420,6 +488,34 @@ def train_and_evaluate_rf(df, target='rating_bin',
     predictions        : Tuple of (y_test, y_pred) for summary reporting
     """
 
+    # Check if a cached model exists and rerun is False
+    if os.path.exists(cache_path) and not rerun:
+        print(f"[INFO] Loading cached model from {cache_path}...")
+        rf_model = joblib.load(cache_path)
+        
+        # Load data for predictions and metrics
+        X = df.drop(target, axis=1)
+        y = df[target]
+        _, X_test, _, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+        y_pred = rf_model.predict(X_test)
+        
+        # Calculate metrics
+        r2 = r2_score(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        
+        feature_importance = pd.DataFrame({
+            'feature': X.columns,
+            'importance': rf_model.feature_importances_
+        }).sort_values('importance', ascending=False)
+
+        print("[INFO] Model loaded successfully with the following performance:")
+        print(f"R2 Score: {r2:.3f}")
+        print(f"Root Mean Squared Error: {rmse:.3f}")
+        
+        return rf_model, feature_importance, (r2, rmse), (y_test, y_pred)
+
+    # If no cached model or rerun is True, train a new model
+    print("[INFO] Training a new Random Forest model...")
     start_time = time()
 
     # Separate features and target
@@ -438,31 +534,218 @@ def train_and_evaluate_rf(df, target='rating_bin',
     )
     rf_model.fit(X_train, y_train)
 
+    # Save the model to the cache path
+    joblib.dump(rf_model, cache_path)
+    print(f"[INFO] Model trained and saved to {cache_path}")
+
     # Feature importance
     feature_importance = pd.DataFrame({
         'feature': X.columns,
         'importance': rf_model.feature_importances_
     }).sort_values('importance', ascending=False)
 
-    # print("Top 10 most important features:")
-    # print(feature_importance.head(10))
-
     # Make predictions and calculate metrics
     y_pred = rf_model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 
-    print("Model Performance:")
+    print("[INFO] Model Performance:")
     print(f"R2 Score: {r2:.3f}")
     print(f"Root Mean Squared Error: {rmse:.3f}")
 
     # Calculate elapsed time
     end_time = time()
     elapsed_time = timedelta(seconds=end_time - start_time)
-    print(f"\nTotal model train and execution time: {elapsed_time} \n")
+    print(f"\n[INFO] Total model train and execution time: {elapsed_time} \n")
 
     return rf_model, feature_importance, (r2, rmse), (y_test, y_pred)
 
+def train_and_evaluate_svm(df, target='rating_bin', test_size=0.2, kernel='rbf', 
+                           C=1.0, epsilon=0.1, random_state=42, 
+                           cache_path='svm_model.joblib', rerun=False):
+    """
+    Train and evaluate an SVM model on the given dataset with caching option.
+
+    Parameters:
+    -----------
+    df                 : pandas DataFrame          : Input DataFrame containing features and target
+    target             : str, default='rating_bin' : Name of the target column
+    test_size          : float, default=0.2        : Proportion of test split
+    kernel             : str, default='rbf'        : Kernel type for SVM (e.g., 'linear', 'rbf')
+    C                  : float, default=1.0        : Regularization parameter
+    epsilon            : float, default=0.1        : Epsilon in the epsilon-SVR model
+    random_state       : int, default=42           : Random state for reproducibility
+    cache_path         : str, default='svm_model.joblib' : Path to cache the trained model
+    rerun              : bool, default=False       : If False, load cached model if available
+
+    Returns:
+    --------
+    svm_model          : Trained SVR model
+    metrics            : Tuple with R2 score and RMSE
+    predictions        : Tuple of (y_test, y_pred) for summary reporting
+    """
+
+    # Check if a cached model exists and rerun is False
+    if os.path.exists(cache_path) and not rerun:
+        print(f"[INFO] Loading cached SVM model from {cache_path}...")
+        svm_model = joblib.load(cache_path)
+        
+        # Load data for predictions and metrics
+        X = df.drop(target, axis=1)
+        y = df[target]
+        _, X_test, _, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+        y_pred = svm_model.predict(X_test)
+        
+        # Calculate metrics
+        r2 = r2_score(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+        print("[INFO] SVM Model loaded successfully with the following performance:")
+        print(f"R2 Score: {r2:.3f}")
+        print(f"Root Mean Squared Error: {rmse:.3f}")
+        
+        return svm_model, (r2, rmse), (y_test, y_pred)
+
+    # If no cached model or rerun is True, train a new model
+    print("[INFO] Training a new SVM model...")
+    start_time = time()
+
+    # Separate features and target
+    X = df.drop(target, axis=1)
+    y = df[target]
+
+    # Split the data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+
+    # Train the SVM model
+    svm_model = SVR(kernel=kernel, C=C, epsilon=epsilon)
+    svm_model.fit(X_train, y_train)
+
+    # Save the model to the cache path
+    joblib.dump(svm_model, cache_path)
+    print(f"[INFO] SVM model trained and saved to {cache_path}")
+
+    # Make predictions and calculate metrics
+    y_pred = svm_model.predict(X_test)
+    r2 = r2_score(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    print("[INFO] SVM Model Performance:")
+    print(f"R2 Score: {r2:.3f}")
+    print(f"Root Mean Squared Error: {rmse:.3f}")
+
+    # Calculate elapsed time
+    end_time = time()
+    elapsed_time = timedelta(seconds=end_time - start_time)
+    print(f"\n[INFO] Total SVM model train and execution time: {elapsed_time} \n")
+
+    return svm_model, (r2, rmse), (y_test, y_pred)
+
+def train_and_evaluate_svm_optimized(df, target='rating_bin', test_size=0.2, kernel='rbf', 
+                                   C=1.0, epsilon=0.1, random_state=42, 
+                                   cache_path='svm_model_opt.joblib', rerun=False,
+                                   sample_size=50000):
+    """
+    Optimized version of SVM training with proper preprocessing and sampling.
+    
+    Parameters:
+    -----------
+    df : pandas DataFrame : Input DataFrame containing features and target
+    target : str : Name of target column (default='rating_bin')
+    test_size : float : Proportion for test split (default=0.2)
+    kernel : str : Kernel type ('rbf', 'linear', etc) (default='rbf')
+    C : float : Regularization parameter (default=1.0)
+    epsilon : float : Epsilon in the epsilon-SVR model (default=0.1)
+    random_state : int : Random state for reproducibility (default=42)
+    cache_path : str : Where to save/load model (default='svm_model_opt.joblib')
+    rerun : bool : Whether to force retraining (default=False)
+    sample_size : int : Total sample size to use (default=10000)
+    
+    Returns:
+    --------
+    Same as original train_and_evaluate_svm for compatibility
+    """
+    # Check cache first
+    if os.path.exists(cache_path) and not rerun:
+        print(f"[INFO] Loading cached optimized SVM model from {cache_path}...")
+        svm_model = joblib.load(cache_path)
+        
+        # Prepare data for predictions and metrics
+        # Take stratified sample and scale
+        df_stratified = df.groupby(target, group_keys=False).apply(
+            lambda x: x.sample(n=min(len(x), sample_size//10), random_state=random_state)
+        )
+        X = df_stratified.drop(target, axis=1)
+        y = df_stratified[target]
+        
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        
+        # Split data
+        _, X_test, _, y_test = train_test_split(
+            X_scaled, y, test_size=test_size, random_state=random_state
+        )
+        
+        # Get predictions
+        y_pred = svm_model.predict(X_test)
+        
+        # Calculate metrics
+        r2 = r2_score(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+        print("[INFO] SVM Model loaded successfully with the following performance:")
+        print(f"R2 Score: {r2:.3f}")
+        print(f"Root Mean Squared Error: {rmse:.3f}")
+        
+        return svm_model, (r2, rmse), (y_test, y_pred)
+
+    # If no cached model or rerun is True, train a new one
+    print("[INFO] Training new optimized SVM model...")
+    start_time = time()
+
+    # Take stratified sample
+    print(f"[INFO] Taking stratified sample of {sample_size} rows...")
+    df_stratified = df.groupby(target, group_keys=False).apply(
+        lambda x: x.sample(n=min(len(x), sample_size//10), random_state=random_state)
+    )
+    
+    # Prepare and scale features
+    X = df_stratified.drop(target, axis=1)
+    y = df_stratified[target]
+    
+    print("[INFO] Scaling features...")
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_scaled, y, test_size=test_size, random_state=random_state
+    )
+
+    # Train model
+    print(f"[INFO] Training SVM with {kernel} kernel...")
+    svm_model = SVR(kernel=kernel, C=C, epsilon=epsilon)
+    svm_model.fit(X_train, y_train)
+
+    # Save the model
+    joblib.dump(svm_model, cache_path)
+    print(f"[INFO] Model saved to {cache_path}")
+
+    # Make predictions and calculate metrics
+    y_pred = svm_model.predict(X_test)
+    r2 = r2_score(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+    print("[INFO] Model Performance:")
+    print(f"R2 Score: {r2:.3f}")
+    print(f"Root Mean Squared Error: {rmse:.3f}")
+
+    end_time = time()
+    print(f"\n[INFO] Total execution time: {timedelta(seconds=end_time - start_time)} \n")
+
+    return svm_model, (r2, rmse), (y_test, y_pred)
 
 def generate_summary_report(y_test, y_pred):
     """
@@ -504,8 +787,8 @@ def generate_summary_report(y_test, y_pred):
         f"- Only {100 - close_predictions * 100:.1f}% off by more than 1 bin\n"
         f"- Major mistakes (off by 3 or more bins): {major_errors:.1%}\n\n"
         f"**Putting It in Perspective:**\n"
-        f"If you're trying to predict if a movie is 'good' (7–8), 'great' (8–9), "
-        f"or 'excellent' (9–10), you'll be within the right range {close_predictions:.2%} of the time. "
+        f"If you're trying to predict if a movie is 'good' (7–8), 'great' (8–9), \n"
+        f"or 'excellent' (9–10), you'll be within the right range {close_predictions:.2%} of the time.\n"
         f"Major errors are pretty rare, happening less than {major_errors * 100:.1f}% of the time."
     )
 
