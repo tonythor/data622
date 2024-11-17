@@ -186,3 +186,4 @@ project2.ipynb
 rf_model.joblib
 svm_model.joblib
 svm_model_opt.joblib
+*.joblib

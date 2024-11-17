@@ -109,6 +109,8 @@ img {
 ## Project Overview
 In this project, we set out to use Random Forest on the [IMDB non-commercial dataset](https://developer.imdb.com/non-commercial-datasets/)to predict movie ratings. While the dataset lacks financial performance metrics like box office revenue or streaming views, it provides key features such as ratings, genres, and cast information, which became the foundation of our analysis.
 
+This project provided an ideal test case for exploring decision tree limitations, as movie ratings involve both categorical (genres) and numerical (runtime) features, similar to many real world applications.
+
 One of the biggest challenges we encountered was the sheer number of unique actors. With millions of actors in the dataset, one-hot encoding was not practical. To address this, we developed a system to measure actor experience through an average-based metric and a Likert-scale score for each movie’s cast, giving us a way to quantify experience without overwhelming the model.
 
 Despite the challenges, our efforts paid off. From the initial runs, we achieved promising predictive results, showing that thoughtful feature engineering can unlock valuable insights even in large, complex datasets.
@@ -151,38 +153,129 @@ Below is a summary of the calculated columns added and their purpose:
 
 
 ## Data Overview
-```{python load, message=false, warning=false, echo=FALSE}
+```{python load_01, message=false, warning=false, echo=FALSE}
 data_dir = "622data_nogit/imdb"
-from lussi.imdb import *
+from lussi.imdb2 import *
 from lussi.glimpse import *
 df = load_imdb(data_dir)
 glimpse(df)
 ```
+## Model Comparisons
 
+### Decision Tree Models
+First, we'll establish baseline performance using decision trees of varying complexity.
 
-## Random Forest Models
-
-### Assumes number of votes
-While using the number of votes doesn't make sense, we included it to test the model. This feature reflects audience reception after a movie's release, so incorporating it could skew the predictions and introduce bias. 
-
-```{python imdb}
-#This assumes a number of votes already. Unlikely. 
-df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names'])
-model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1)
-generate_summary_report(*predictions1)
-display(plot_importance(importance1))
+#### Basic Decision Tree Model
+```{python basic_tree_02}
+# Train basic decision tree without vote counts
+df_cleaned = df.drop(columns=['tconst', 'primaryTitle', 'actor_names', 'numVotes'])
+basic_tree, basic_metrics, basic_preds = train_and_evaluate_basic_tree(
+    df_cleaned,
+    cache_path='basic_tree_no_votes.joblib',
+    rerun=False,
+    show_output=False
+)
+generate_summary_report(*basic_preds, "Basic Decision Tree")
 ```
 
-### Assumes no votes
-This is more likely. We'll get a record, it'll be new and with no votes, and we'll try to predict the ratings from here.
-```{python imdb}
-# This is a new program with no votes at all. 
-df_dropped2 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names', 'numVotes'])
-model2, importance2, metrics2, predictions2 = train_and_evaluate_rf(df_dropped2)
-generate_summary_report(*predictions2)
-display(plot_importance(importance2))
+#### Complex Decision Tree Model
+```{python complex_tree_03}
+# Train complex decision tree without vote counts
+complex_tree, complex_metrics, complex_preds = train_and_evaluate_complex_tree(
+    df_cleaned,
+    cache_path='complex_tree_no_votes.joblib',
+    rerun=False,
+    show_output=False
+)
+generate_summary_report(*complex_preds, "Complex Decision Tree")
 ```
+
+### Random Forest Models
+We'll examine Random Forest performance under two scenarios: including vote counts (which could introduce bias) and excluding them (more realistic for new movies).
+
+#### With Vote Counts
+While using vote counts doesn't reflect real-world prediction scenarios (since we wouldn't have this data for new movies), we include it to test the model's potential performance with this information.
+``` {python rf_including_vote_counts_04}
+# Train Random Forest including vote counts
+df_with_votes = df.drop(columns=['tconst', 'primaryTitle', 'actor_names'])
+rf_votes, importance_votes, metrics_votes, predictions_votes = train_and_evaluate_rf(
+    df_with_votes,
+    cache_path='rf_with_votes.joblib',
+    rerun=False,
+    show_output=False
+)
+generate_summary_report(*predictions_votes, "Random Forest (with votes)")
+# display(plot_importance(importance_votes))
+
+```
+
+#### Without Vote Counts
+This scenario better reflects real-world use where we predict ratings for new movies without vote information.
+
+```{python rf_excluding_vote_counts_05}
+# Train Random Forest excluding vote counts
+rf_no_votes, importance_no_votes, metrics_no_votes, predictions_no_votes = train_and_evaluate_rf(
+    df_cleaned,
+    cache_path='rf_no_votes.joblib',
+    rerun=False,
+    show_output=False
+)
+generate_summary_report(*predictions_no_votes, "Random Forest (without votes)")
+# display(plot_importance(importance_no_votes))
+```
+
+## Comparing Our Approaches
+
+We tackled the challenge of predicting movie ratings using decision trees, learning from common problems highlighted in "The GOOD, The BAD & The UGLY of Using Decision Trees." Here's how we built and improved our approach:
+
+1. **Simple Decision Tree**
+- Used just basic features like movie length and genres
+- Often made big mistakes when movies didn't fit typical patterns
+- Showed us why single decision trees can be too rigid
+
+2. **Complex Decision Tree**
+- Added more features like actor experience scores
+- Got slightly better results but started to look messy
+- Demonstrated the "memorization" problem mentioned in the blog
+
+3. **Random Forest Solution**
+- Combined many trees to avoid single tree problems
+- Performed more consistently across different types of movies
+- Solved many issues the blog warned about
+
+The blog mentioned how decision trees can "blow up" with too many options - we saw this firsthand. Our simple tree was too basic, our complex tree started memorizing data, but the Random Forest found a good balance.
+
+
+## Learning From Past Decision Tree Problems
+
+The blog warned about several real world problems with decision trees. Here's how we dealt with each one:
+
+**Problem 1: Trees That Memorize Instead of Learn**
+- Blog Example: Customer service chatbots that only work for exact matches
+- Our Solution: Used Random Forest to average out individual tree mistakes
+- Result: More reliable predictions even for unusual movies
+
+**Problem 2: Too Many Options**
+- Blog Example: Product recommendation trees that get overwhelmed with too many options (like having thousands of individual products)
+- Our Solution: Created simpler categories by converting thousands of actors into simple 1-5 experience scores
+- Result: Made predictions possible without getting lost in endless detail
+
+**Problem 3: Hard to Maintain**
+- Blog Example: Support systems that break when adding new options
+- Our Solution: Created features that work automatically for new movies
+- Result: System that can handle new actors and movies
 
 ## Conclusion
 
-Our results show that, with around 80% accuracy, we can predict movie ratings within one rating bin using features like actor experience, genre, and runtime. Including vote counts in the model slightly improved performance but introduced bias. Without votes, the model still performed well, confirming that carefully engineered features provide meaningful insights. This project demonstrates that Random Forest is a viable approach for predicting IMDB ratings, even when financial data is not available.
+Our work with decision trees taught us several important lessons:
+- Simple trees can work, but need careful feature design
+- The problems mentioned in the blog are real - we hit most of them
+- Random Forests help, but good data preparation matters more
+- Getting 80% accuracy within one rating point shows this approach works
+
+While our approach successfully tackles the main problems discussed in the blog, we see several ways to make it even better:
+- Adding automated updates for new movies
+- Testing more thoroughly with different types of movies
+- Using more specific actor traits beyond just experience
+
+Most importantly, we learned that success with decision trees isn't just about the model - it's about understanding their limitations and designing solutions that work around them. Our approach might not be perfect, but it demonstrates how thoughtful feature engineering and Random Forests can overcome common decision tree problems while delivering practical value.
