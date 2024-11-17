@@ -155,7 +155,7 @@ Below is a summary of the calculated columns added and their purpose:
 ## Data Overview
 ```{python load_01, message=false, warning=false, echo=FALSE}
 data_dir = "622data_nogit/imdb"
-from lussi.imdb2 import *
+from lussi.imdb import *
 from lussi.glimpse import *
 df = load_imdb(data_dir)
 glimpse(df)

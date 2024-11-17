@@ -28,6 +28,7 @@ import requests
 from IPython.display import HTML
 from loguru import logger
 import joblib  # Useful for saving/loading large models
+from imblearn.over_sampling import SMOTE
 
 # Scikit-learn imports
 from sklearn.preprocessing import StandardScaler
@@ -35,7 +36,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+
 
 
 # Constants
@@ -404,6 +406,7 @@ def augment_add_columns(data_dir: str) -> None:
         logger.error(f"Error augmenting dataset: {e}")
         raise
 
+
 def train_and_evaluate_rf(df, target='rating_bin', test_size=0.2, n_estimators=100,
                           random_state=42, cache_path='rf_model.joblib', rerun=False, show_output=True):
     """
@@ -429,7 +432,7 @@ def train_and_evaluate_rf(df, target='rating_bin', test_size=0.2, n_estimators=1
 
     # Check if a cached model exists and rerun is False
     if os.path.exists(cache_path) and not rerun:
-        print(f"[INFO] Loading cached model from {cache_path}...")
+        print(f"Loading cached model from {cache_path}...")
         rf_model = joblib.load(cache_path)
         
         # Load data for predictions and metrics
@@ -446,16 +449,15 @@ def train_and_evaluate_rf(df, target='rating_bin', test_size=0.2, n_estimators=1
             'feature': X.columns,
             'importance': rf_model.feature_importances_
         }).sort_values('importance', ascending=False)
-
         if show_output:
-            print("[INFO] Model loaded successfully with the following performance:")
+            print("Model loaded successfully with the following performance:")
             print(f"R2 Score: {r2:.3f}")
             print(f"Root Mean Squared Error: {rmse:.3f}")
         
         return rf_model, feature_importance, (r2, rmse), (y_test, y_pred)
 
     # If no cached model or rerun is True, train a new model
-    # print("[INFO] Training a new Random Forest model...")
+    if show_output: print("Training a new Random Forest model...")
     start_time = time()
 
     # Separate features and target
@@ -476,7 +478,7 @@ def train_and_evaluate_rf(df, target='rating_bin', test_size=0.2, n_estimators=1
 
     # Save the model to the cache path
     joblib.dump(rf_model, cache_path)
-    if show_output: print(f"[INFO] Model trained and saved to {cache_path}")
+    if show_output: print(f"Model trained and saved to {cache_path}")
 
     # Feature importance
     feature_importance = pd.DataFrame({
@@ -488,16 +490,15 @@ def train_and_evaluate_rf(df, target='rating_bin', test_size=0.2, n_estimators=1
     y_pred = rf_model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
-    if show_output:
-        print("[INFO] Model Performance:")
+    if show_output: 
+        print("Model Performance:")
         print(f"R2 Score: {r2:.3f}")
         print(f"Root Mean Squared Error: {rmse:.3f}")
 
     # Calculate elapsed time
     end_time = time()
     elapsed_time = timedelta(seconds=end_time - start_time)
-    if show_output: print(f"\n[INFO] Total model train and execution time: {elapsed_time} \n")
+    if show_output: print(f"\nTotal model train and execution time: {elapsed_time} \n")
 
     return rf_model, feature_importance, (r2, rmse), (y_test, y_pred)
 
@@ -528,7 +529,7 @@ def train_and_evaluate_svm(df, target='rating_bin', test_size=0.2, kernel='rbf',
 
     # Check if a cached model exists and rerun is False
     if os.path.exists(cache_path) and not rerun:
-        print(f"[INFO] Loading cached SVM model from {cache_path}...")
+        print(f"Loading cached SVM model from {cache_path}...")
         svm_model = joblib.load(cache_path)
         
         # Load data for predictions and metrics
@@ -540,16 +541,15 @@ def train_and_evaluate_svm(df, target='rating_bin', test_size=0.2, kernel='rbf',
         # Calculate metrics
         r2 = r2_score(y_test, y_pred)
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
         if show_output:
-            print("[INFO] SVM Model loaded successfully with the following performance:")
+            print("SVM Model loaded successfully with the following performance:")
             print(f"R2 Score: {r2:.3f}")
-            print(f"Root Mean Squared Error: {rmse:.3f}")        
+            print(f"Root Mean Squared Error: {rmse:.3f}")
+        
         return svm_model, (r2, rmse), (y_test, y_pred)
 
     # If no cached model or rerun is True, train a new model
-    
-    if show_output: print("[INFO] Training a new SVM model...")
+    if show_output: print("Training a new SVM model...")
     start_time = time()
 
     # Separate features and target
@@ -567,99 +567,89 @@ def train_and_evaluate_svm(df, target='rating_bin', test_size=0.2, kernel='rbf',
 
     # Save the model to the cache path
     joblib.dump(svm_model, cache_path)
-    if show_output: print(f"[INFO] SVM model trained and saved to {cache_path}")
+    if show_output: print(f"SVM model trained and saved to {cache_path}")
 
     # Make predictions and calculate metrics
     y_pred = svm_model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
     if show_output:
-        print("[INFO] SVM Model Performance:")
+        print("SVM Model Performance:")
         print(f"R2 Score: {r2:.3f}")
         print(f"Root Mean Squared Error: {rmse:.3f}")
-
+ 
     # Calculate elapsed time
     end_time = time()
     elapsed_time = timedelta(seconds=end_time - start_time)
-    if show_output: print(f"\n[INFO] Total SVM model train and execution time: {elapsed_time} \n")
+    if show_output: print(f"\nTotal SVM model train and execution time: {elapsed_time} \n")
 
     return svm_model, (r2, rmse), (y_test, y_pred)
 
-def train_and_evaluate_svm_optimized(df, target='rating_bin', test_size=0.2, kernel='rbf', 
-                                   C=1.0, epsilon=0.1, random_state=42, 
-                                   cache_path='svm_model_opt.joblib', rerun=False,
-                                   sample_size=50000, show_output=True):
+def train_and_evaluate_svm_optimized(
+    df, target='rating_bin', test_size=0.2, random_state=42, 
+    cache_path='svm_model_opt.joblib', rerun=False, sample_size=50000,
+    n_iter=5, scoring='r2', cv=5, verbose=2, show_output=True):
     """
-    Optimized version of SVM training with proper preprocessing and sampling.
+    Optimized version of SVM training with hyperparameter tuning using RandomizedSearchCV.
     
     Parameters:
     -----------
-    df : pandas DataFrame : Input DataFrame containing features and target
-    target : str : Name of target column (default='rating_bin')
-    test_size : float : Proportion for test split (default=0.2)
-    kernel : str : Kernel type ('rbf', 'linear', etc) (default='rbf')
-    C : float : Regularization parameter (default=1.0)
-    epsilon : float : Epsilon in the epsilon-SVR model (default=0.1)
-    random_state : int : Random state for reproducibility (default=42)
-    cache_path : str : Where to save/load model (default='svm_model_opt.joblib')
-    rerun : bool : Whether to force retraining (default=False)
-    sample_size : int : Total sample size to use (default=50000)
+    df : pandas DataFrame : Input DataFrame containing features and target.
+    target : str : Name of target column (default='rating_bin').
+    test_size : float : Proportion for test split (default=0.2).
+    random_state : int : Random state for reproducibility (default=42).
+    cache_path : str : Where to save/load model (default='svm_model_opt.joblib').
+    rerun : bool : Whether to force retraining (default=False).
+    sample_size : int : Total sample size to use (default=50000).
+    n_iter : int : Number of parameter settings sampled in RandomizedSearchCV (default=5).
+    scoring : str : Scoring metric for evaluation (default='r2').
+    cv : int : Number of cross-validation folds (default=5).
+    verbose : int : Verbosity level for RandomizedSearchCV (default=2).
     
     Returns:
     --------
-    Same as original train_and_evaluate_svm for compatibility
+    Trained SVM model, metrics (R2, RMSE), and test data (y_test, y_pred).
     """
-    # Check cache first
+    # Check cache
     if os.path.exists(cache_path) and not rerun:
-        print(f"[INFO] Loading cached optimized SVM model from {cache_path}...")
+        print(f"Loading cached optimized SVM model from {cache_path}...")
         svm_model = joblib.load(cache_path)
         
-        # Prepare data for predictions and metrics
-        # Take stratified sample and scale
+        # Prepare test data for evaluation
         df_stratified = df.groupby(target, group_keys=False).apply(
-            lambda x: x.sample(n=min(len(x), sample_size//10), random_state=random_state)
+            lambda x: x.sample(n=min(len(x), sample_size // 10), random_state=random_state)
         )
         X = df_stratified.drop(target, axis=1)
         y = df_stratified[target]
-        
+
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
         
-        # Split data
         _, X_test, _, y_test = train_test_split(
             X_scaled, y, test_size=test_size, random_state=random_state
         )
         
-        # Get predictions
         y_pred = svm_model.predict(X_test)
-        
-        # Calculate metrics
         r2 = r2_score(y_test, y_pred)
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
         if show_output:
-            print("[INFO] SVM Model loaded successfully with the following performance:")
+            print("SVM Model loaded successfully with the following performance:")
             print(f"R2 Score: {r2:.3f}")
             print(f"Root Mean Squared Error: {rmse:.3f}")
         
         return svm_model, (r2, rmse), (y_test, y_pred)
 
-    # If no cached model or rerun is True, train a new one
-    if show_output: print("[INFO] Training new optimized SVM model...")
+    if show_output: print("Training new optimized SVM model...")
     start_time = time()
-
-    # Take stratified sample
-    if show_output:  print(f"[INFO] Taking stratified sample of {sample_size} rows...")
+    
+    # Stratified sampling
     df_stratified = df.groupby(target, group_keys=False).apply(
-        lambda x: x.sample(n=min(len(x), sample_size//10), random_state=random_state)
+        lambda x: x.sample(n=min(len(x), sample_size // 10), random_state=random_state)
     )
     
-    # Prepare and scale features
+    # Feature scaling
     X = df_stratified.drop(target, axis=1)
     y = df_stratified[target]
-    
-    if show_output: print("[INFO] Scaling features...")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
@@ -667,32 +657,54 @@ def train_and_evaluate_svm_optimized(df, target='rating_bin', test_size=0.2, ker
     X_train, X_test, y_train, y_test = train_test_split(
         X_scaled, y, test_size=test_size, random_state=random_state
     )
-
-    # Train model
-    if show_output: print(f"[INFO] Training SVM with {kernel} kernel...")
-    svm_model = SVR(kernel=kernel, C=C, epsilon=epsilon)
-    svm_model.fit(X_train, y_train)
-
+    
+    # Hyperparameter grid
+    param_grid = {
+        'C': [0.1, 1, 10, 100],
+        'epsilon': [0.01, 0.1, 0.5, 1],
+        'kernel': ['linear', 'poly', 'rbf', 'sigmoid']
+    }
+    
+    # RandomizedSearchCV
+    print("Performing hyperparameter optimization...")
+    svr = SVR()
+    random_search = RandomizedSearchCV(
+        estimator=svr,
+        param_distributions=param_grid,
+        n_iter=n_iter,
+        scoring=scoring,
+        cv=cv,
+        verbose=verbose,
+        random_state=random_state,
+        n_jobs=-1
+    )
+    random_search.fit(X_train, y_train)
+    
+    # Best model
+    svm_model = random_search.best_estimator_
+    print("Best hyperparameters found:", random_search.best_params_)
+    
     # Save the model
     joblib.dump(svm_model, cache_path)
-    print(f"[INFO] Model saved to {cache_path}")
-
-    # Make predictions and calculate metrics
+    if show_output: print(f"Model saved to {cache_path}")
+    
+    # Predictions and metrics
     y_pred = svm_model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
+    
     if show_output:
-        print("[INFO] Model Performance:")
+        print("Model Performance:")
         print(f"R2 Score: {r2:.3f}")
         print(f"Root Mean Squared Error: {rmse:.3f}")
-
+    
     end_time = time()
-    if show_output: print(f"\n[INFO] Total execution time: {timedelta(seconds=end_time - start_time)} \n")
+    if show_output: print(f"Total execution time: {timedelta(seconds=end_time - start_time)}")
+    
     return svm_model, (r2, rmse), (y_test, y_pred)
 
 def generate_summary_report(y_test, y_pred, report_name="CHANGE ME"):
-    # Calculate all the same metrics as before
+    # Calculate metrics
     y_pred_rounded = np.round(y_pred)
     exact_matches = (y_pred_rounded == y_test).mean()
     close_predictions = (abs(y_pred_rounded - y_test) <= 1).mean()
@@ -700,33 +712,34 @@ def generate_summary_report(y_test, y_pred, report_name="CHANGE ME"):
     major_errors = sum(v for k, v in differences.items() if abs(k) >= 3) / len(y_test)
     r2 = r2_score(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    
+    # Create summary as a single f-string
+    summary = f"""
+{'='*80}
+Results for: {report_name}
+{'='*80}
 
-    # New, more readable summary format
-    summary = (
-        "\n" + "="*80 + "\n"
-        f"Results for {report_name}\n" + "="*80 + "\n\n"
-        
-        "Quick Summary:\n"
-        f"- Gets the exact rating {exact_matches:.0%} of the time\n"
-        f"- Within one rating point {close_predictions:.0%} of the time\n"
-        f"- Makes big mistakes only {major_errors:.1%} of the time\n\n"
-        
-        "Technical Details:\n"
-        f"- R² Score: {r2:.3f}\n"
-        f"- RMSE: {rmse:.3f}\n\n"
-        
-        "What This Means:\n"
-        "If you're trying to decide if a movie will be good (7-8), great (8-9),\n"
-        "or excellent (9-10), this model will get it right or be off by just\n"
-        f"one rating point {close_predictions:.0%} of the time.\n"
-        "=" * 80
-    )
+Quick Summary:
+- Gets the exact rating {exact_matches:.0%} of the time
+- Within one rating point {close_predictions:.0%} of the time
+- Makes big mistakes only {major_errors:.1%} of the time
+
+Technical Details:
+- R² Score: {r2:.3f}
+- RMSE: {rmse:.3f}
+
+What This Means:
+If you're trying to decide if a movie will be good (7-8), great (8-9),
+or excellent (9-10), this model will get it right or be off by just
+one rating point {close_predictions:.0%} of the time.
+{'='*80}"""
     
     print(summary)
 
-# def generate_summary_report(y_test, y_pred, report_name="CHANGE ME"):
+# def generate_summary_report_3(y_test, y_pred):
 #     """
 #     Generate a friendly, human-readable summary of the model's performance.
+#     This is for assignment 3 only. 
 
 #     Parameters:
 #     -----------
@@ -754,9 +767,6 @@ def generate_summary_report(y_test, y_pred, report_name="CHANGE ME"):
 
 #     # Build the summary report
 #     summary = (
-#         "\n**************************************************************************************************\n"
-#         f"**  REPORT: {report_name}  \n"
-#         "**************************************************************************************************\n"
 #         f"**Accuracy Measures:**\n"
 #         f"- {exact_matches:.2%} exact matches (got the rating bin exactly right)\n"
 #         f"- {close_predictions:.2%} within 1 bin (either exact or just one bin off)\n\n"
@@ -769,9 +779,7 @@ def generate_summary_report(y_test, y_pred, report_name="CHANGE ME"):
 #         f"**Putting It in Perspective:**\n"
 #         f"If you're trying to predict if a movie is 'good' (7–8), 'great' (8–9), \n"
 #         f"or 'excellent' (9–10), you'll be within the right range {close_predictions:.2%} of the time.\n"
-#         f"Major errors are pretty rare, happening less than {major_errors * 100:.1f}% of the time.\n"
-#         "**************************************************************************************************"
-
+#         f"Major errors are pretty rare, happening less than {major_errors * 100:.1f}% of the time."
 #     )
 
 #     print(summary)
@@ -846,11 +854,37 @@ def prebuild():
     initial_load_and_merge(data_dir)
     augment_add_columns(data_dir)
 
+def histogram_likert(df):
+    """
+    Generates a histogram for the 'experienced_actors_likert' column 
+    with a minimal theme and customized titles.
 
+    Parameters:
+    -----------------
+    df : pandas DataFrame : The DataFrame containing the column to plot.
+    """
+    # Create the Histogram
+    fig = px.histogram(
+        df,
+        x='experienced_actors_likert', 
+        title='Likert Score Distribution',
+        width=800,  # Set the width of the plot
+        height=500,  # Set the height of the plot
+        template="simple_white"
+    )
+    
+    # Center the title
+    fig.update_layout(
+        title_x=0.5,
+        xaxis_title='Experienced Actors Likert Scores',
+        yaxis_title='Count'
+    )
+                     
+    fig.show()
 def train_and_evaluate_basic_tree(df, target='rating_bin', 
                                 test_size=0.2, max_depth=10,
                                 random_state=42, cache_path='basic_tree.joblib',
-                                rerun=False, show_output=False):
+                                rerun=False, show_output=True):
     """
     Train and evaluate a basic decision tree using simple features.
     
@@ -872,7 +906,7 @@ def train_and_evaluate_basic_tree(df, target='rating_bin',
     """
     # Check if cached model exists
     if os.path.exists(cache_path) and not rerun:
-        if show_output: print(f"[INFO] Loading cached basic decision tree from {cache_path}...")
+        if show_output: print(f"Loading cached basic decision tree from {cache_path}...")
         tree_model = joblib.load(cache_path)
         
         # Basic features only
@@ -887,7 +921,7 @@ def train_and_evaluate_basic_tree(df, target='rating_bin',
         y_pred = tree_model.predict(X_test)
         
     else:
-        if show_output: print("[INFO] Training new basic decision tree...")
+        if show_output: print("Training new basic decision tree...")
         # Select basic features
         basic_features = ['runtimeMinutes', 'num_actors', 'Action', 'Comedy', 
                          'Drama', 'Documentary', 'Romance']
@@ -915,7 +949,7 @@ def train_and_evaluate_basic_tree(df, target='rating_bin',
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 
     if show_output:   
-        print("[INFO] Basic Decision Tree Performance:")
+        print("Basic Decision Tree Performance:")
         print(f"R2 Score: {r2:.3f}")
         print(f"Root Mean Squared Error: {rmse:.3f}")
     
@@ -946,7 +980,7 @@ def train_and_evaluate_complex_tree(df, target='rating_bin',
     """
     # Check if cached model exists
     if os.path.exists(cache_path) and not rerun:
-        print(f"[INFO] Loading cached complex decision tree from {cache_path}...")
+        print(f"Loading cached complex decision tree from {cache_path}...")
         tree_model = joblib.load(cache_path)
         
         # Complex features
@@ -962,7 +996,7 @@ def train_and_evaluate_complex_tree(df, target='rating_bin',
         y_pred = tree_model.predict(X_test)
         
     else:
-        if show_output: print("[INFO] Training new complex decision tree...")
+        if show_output: print("Training new complex decision tree...")
         # Select complex features
         complex_features = ['runtimeMinutes', 'num_actors', 'experienced_actor_count',
                           'experienced_actors_likert', 'Action', 'Comedy', 'Drama',
@@ -991,53 +1025,8 @@ def train_and_evaluate_complex_tree(df, target='rating_bin',
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     
     if show_output:
-        print("[INFO] Complex Decision Tree Performance:")
+        print("Complex Decision Tree Performance:")
         print(f"R2 Score: {r2:.3f}")
         print(f"Root Mean Squared Error: {rmse:.3f}")
     
     return tree_model, (r2, rmse), (y_test, y_pred)
-
-def compare_models(basic_metrics, complex_metrics, rf_metrics):
-    """
-    Compare performance metrics between basic tree, complex tree and random forest.
-    
-    Parameters:
-    -----------
-    basic_metrics : Tuple of (R2, RMSE) for basic tree
-    complex_metrics : Tuple of (R2, RMSE) for complex tree
-    rf_metrics : Tuple of (R2, RMSE) for random forest
-    
-    Returns:
-    --------
-    str : Formatted comparison text
-    """
-    comparison = """
-    **Model Comparison:**
-    
-    1. Basic Decision Tree:
-       - R2 Score: {:.3f}
-       - RMSE: {:.3f}
-    
-    2. Complex Decision Tree:
-       - R2 Score: {:.3f}
-       - RMSE: {:.3f}
-    
-    3. Random Forest:
-       - R2 Score: {:.3f}
-       - RMSE: {:.3f}
-    
-    Analysis:
-    - The basic decision tree uses minimal features and {basic_analysis}
-    - The complex decision tree adds actor experience features and {complex_analysis}
-    - The Random Forest model {rf_analysis}
-    """.format(
-        basic_metrics[0], basic_metrics[1],
-        complex_metrics[0], complex_metrics[1],
-        rf_metrics[0], rf_metrics[1],
-        basic_analysis="shows baseline performance",
-        complex_analysis="shows improved performance with additional features",
-        rf_analysis="demonstrates the benefits of ensemble learning"
-    )
-    
-    print(comparison)
-    return comparison
