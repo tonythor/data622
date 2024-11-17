@@ -29,8 +29,9 @@ import multiprocessing as mp
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 import joblib  # joblib is useful for saving/loading large models
+from imblearn.over_sampling import SMOTE
 
 # Constants
 INITIAL_JOIN = "merged_clean.parquet"
@@ -643,79 +644,185 @@ def train_and_evaluate_svm(df, target='rating_bin', test_size=0.2, kernel='rbf',
 
     return svm_model, (r2, rmse), (y_test, y_pred)
 
-def train_and_evaluate_svm_optimized(df, target='rating_bin', test_size=0.2, kernel='rbf', 
-                                   C=1.0, epsilon=0.1, random_state=42, 
-                                   cache_path='svm_model_opt.joblib', rerun=False,
-                                   sample_size=50000):
+# def train_and_evaluate_svm_optimized(df, target='rating_bin', test_size=0.2, kernel='rbf', 
+#                                    C=1.0, epsilon=0.1, random_state=42, 
+#                                    cache_path='svm_model_opt.joblib', rerun=False,
+#                                    sample_size=50000):
+#     """
+#     Optimized version of SVM training with proper preprocessing and sampling.
+    
+#     Parameters:
+#     -----------
+#     df : pandas DataFrame : Input DataFrame containing features and target
+#     target : str : Name of target column (default='rating_bin')
+#     test_size : float : Proportion for test split (default=0.2)
+#     kernel : str : Kernel type ('rbf', 'linear', etc) (default='rbf')
+#     C : float : Regularization parameter (default=1.0)
+#     epsilon : float : Epsilon in the epsilon-SVR model (default=0.1)
+#     random_state : int : Random state for reproducibility (default=42)
+#     cache_path : str : Where to save/load model (default='svm_model_opt.joblib')
+#     rerun : bool : Whether to force retraining (default=False)
+#     sample_size : int : Total sample size to use (default=50000)
+    
+#     Returns:
+#     --------
+#     Same as original train_and_evaluate_svm for compatibility
+#     """
+#     # Check cache first
+#     if os.path.exists(cache_path) and not rerun:
+#         print(f"[INFO] Loading cached optimized SVM model from {cache_path}...")
+#         svm_model = joblib.load(cache_path)
+        
+#         # Prepare data for predictions and metrics
+#         # Take stratified sample and scale
+#         df_stratified = df.groupby(target, group_keys=False).apply(
+#             lambda x: x.sample(n=min(len(x), sample_size//10), random_state=random_state)
+#         )
+#         X = df_stratified.drop(target, axis=1)
+#         y = df_stratified[target]
+        
+#         scaler = StandardScaler()
+#         X_scaled = scaler.fit_transform(X)
+        
+#         # Split data
+#         _, X_test, _, y_test = train_test_split(
+#             X_scaled, y, test_size=test_size, random_state=random_state
+#         )
+        
+#         # Get predictions
+#         y_pred = svm_model.predict(X_test)
+        
+#         # Calculate metrics
+#         r2 = r2_score(y_test, y_pred)
+#         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+#         print("[INFO] SVM Model loaded successfully with the following performance:")
+#         print(f"R2 Score: {r2:.3f}")
+#         print(f"Root Mean Squared Error: {rmse:.3f}")
+        
+#         return svm_model, (r2, rmse), (y_test, y_pred)
+
+#     # If no cached model or rerun is True, train a new one
+#     print("[INFO] Training new optimized SVM model...")
+#     start_time = time()
+
+#     # Take stratified sample
+#     print(f"[INFO] Taking stratified sample of {sample_size} rows...")
+#     df_stratified = df.groupby(target, group_keys=False).apply(
+#         lambda x: x.sample(n=min(len(x), sample_size//10), random_state=random_state)
+#     )
+    
+#     # Prepare and scale features
+#     X = df_stratified.drop(target, axis=1)
+#     y = df_stratified[target]
+    
+#     print("[INFO] Scaling features...")
+#     scaler = StandardScaler()
+#     X_scaled = scaler.fit_transform(X)
+    
+#     # Split the data
+#     #X_train, X_test, y_train, y_test = train_test_split(
+#     #    X_scaled, y, test_size=test_size, random_state=random_state
+#     #)
+
+#     # Implement SMOTE
+#     smote = SMOTE(random_state=random_state)
+#     X_resampled, y_resampled = smote.fit_resample(X_scaled, y)
+
+#     # Split the data
+#     X_train, X_test, y_train, y_test = train_test_split(
+#         X_resampled, y_resampled, test_size=test_size, random_state=random_state)
+
+#     # Train model
+#     print(f"[INFO] Training SVM with {kernel} kernel...")
+#     svm_model = SVR(kernel=kernel, C=C, epsilon=epsilon)
+#     svm_model.fit(X_train, y_train)
+
+#     # Save the model
+#     joblib.dump(svm_model, cache_path)
+#     print(f"[INFO] Model saved to {cache_path}")
+
+#     # Make predictions and calculate metrics
+#     y_pred = svm_model.predict(X_test)
+#     r2 = r2_score(y_test, y_pred)
+#     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+#     print("[INFO] Model Performance:")
+#     print(f"R2 Score: {r2:.3f}")
+#     print(f"Root Mean Squared Error: {rmse:.3f}")
+
+#     end_time = time()
+#     print(f"\n[INFO] Total execution time: {timedelta(seconds=end_time - start_time)} \n")
+
+#     return svm_model, (r2, rmse), (y_test, y_pred)
+
+from sklearn.model_selection import RandomizedSearchCV
+
+def train_and_evaluate_svm_optimized(
+    df, target='rating_bin', test_size=0.2, random_state=42, 
+    cache_path='svm_model_opt.joblib', rerun=False, sample_size=50000,
+    n_iter=5, scoring='r2', cv=5, verbose=2):
     """
-    Optimized version of SVM training with proper preprocessing and sampling.
+    Optimized version of SVM training with hyperparameter tuning using RandomizedSearchCV.
     
     Parameters:
     -----------
-    df : pandas DataFrame : Input DataFrame containing features and target
-    target : str : Name of target column (default='rating_bin')
-    test_size : float : Proportion for test split (default=0.2)
-    kernel : str : Kernel type ('rbf', 'linear', etc) (default='rbf')
-    C : float : Regularization parameter (default=1.0)
-    epsilon : float : Epsilon in the epsilon-SVR model (default=0.1)
-    random_state : int : Random state for reproducibility (default=42)
-    cache_path : str : Where to save/load model (default='svm_model_opt.joblib')
-    rerun : bool : Whether to force retraining (default=False)
-    sample_size : int : Total sample size to use (default=50000)
+    df : pandas DataFrame : Input DataFrame containing features and target.
+    target : str : Name of target column (default='rating_bin').
+    test_size : float : Proportion for test split (default=0.2).
+    random_state : int : Random state for reproducibility (default=42).
+    cache_path : str : Where to save/load model (default='svm_model_opt.joblib').
+    rerun : bool : Whether to force retraining (default=False).
+    sample_size : int : Total sample size to use (default=50000).
+    n_iter : int : Number of parameter settings sampled in RandomizedSearchCV (default=5).
+    scoring : str : Scoring metric for evaluation (default='r2').
+    cv : int : Number of cross-validation folds (default=5).
+    verbose : int : Verbosity level for RandomizedSearchCV (default=2).
     
     Returns:
     --------
-    Same as original train_and_evaluate_svm for compatibility
+    Trained SVM model, metrics (R2, RMSE), and test data (y_test, y_pred).
     """
-    # Check cache first
+    # Check cache
     if os.path.exists(cache_path) and not rerun:
         print(f"[INFO] Loading cached optimized SVM model from {cache_path}...")
         svm_model = joblib.load(cache_path)
         
-        # Prepare data for predictions and metrics
-        # Take stratified sample and scale
+        # Prepare test data for evaluation
         df_stratified = df.groupby(target, group_keys=False).apply(
-            lambda x: x.sample(n=min(len(x), sample_size//10), random_state=random_state)
+            lambda x: x.sample(n=min(len(x), sample_size // 10), random_state=random_state)
         )
         X = df_stratified.drop(target, axis=1)
         y = df_stratified[target]
-        
+
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
         
-        # Split data
         _, X_test, _, y_test = train_test_split(
             X_scaled, y, test_size=test_size, random_state=random_state
         )
         
-        # Get predictions
         y_pred = svm_model.predict(X_test)
-        
-        # Calculate metrics
         r2 = r2_score(y_test, y_pred)
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
+        
         print("[INFO] SVM Model loaded successfully with the following performance:")
         print(f"R2 Score: {r2:.3f}")
         print(f"Root Mean Squared Error: {rmse:.3f}")
         
         return svm_model, (r2, rmse), (y_test, y_pred)
 
-    # If no cached model or rerun is True, train a new one
     print("[INFO] Training new optimized SVM model...")
     start_time = time()
-
-    # Take stratified sample
-    print(f"[INFO] Taking stratified sample of {sample_size} rows...")
+    
+    # Stratified sampling
     df_stratified = df.groupby(target, group_keys=False).apply(
-        lambda x: x.sample(n=min(len(x), sample_size//10), random_state=random_state)
+        lambda x: x.sample(n=min(len(x), sample_size // 10), random_state=random_state)
     )
     
-    # Prepare and scale features
+    # Feature scaling
     X = df_stratified.drop(target, axis=1)
     y = df_stratified[target]
-    
-    print("[INFO] Scaling features...")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
@@ -723,29 +830,52 @@ def train_and_evaluate_svm_optimized(df, target='rating_bin', test_size=0.2, ker
     X_train, X_test, y_train, y_test = train_test_split(
         X_scaled, y, test_size=test_size, random_state=random_state
     )
-
-    # Train model
-    print(f"[INFO] Training SVM with {kernel} kernel...")
-    svm_model = SVR(kernel=kernel, C=C, epsilon=epsilon)
-    svm_model.fit(X_train, y_train)
-
+    
+    # Hyperparameter grid
+    param_grid = {
+        'C': [0.1, 1, 10, 100],
+        'epsilon': [0.01, 0.1, 0.5, 1],
+        'kernel': ['linear', 'poly', 'rbf', 'sigmoid']
+    }
+    
+    # RandomizedSearchCV
+    print("[INFO] Performing hyperparameter optimization...")
+    svr = SVR()
+    random_search = RandomizedSearchCV(
+        estimator=svr,
+        param_distributions=param_grid,
+        n_iter=n_iter,
+        scoring=scoring,
+        cv=cv,
+        verbose=verbose,
+        random_state=random_state,
+        n_jobs=-1
+    )
+    random_search.fit(X_train, y_train)
+    
+    # Best model
+    svm_model = random_search.best_estimator_
+    print("[INFO] Best hyperparameters found:", random_search.best_params_)
+    
     # Save the model
     joblib.dump(svm_model, cache_path)
     print(f"[INFO] Model saved to {cache_path}")
-
-    # Make predictions and calculate metrics
+    
+    # Predictions and metrics
     y_pred = svm_model.predict(X_test)
     r2 = r2_score(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
+    
     print("[INFO] Model Performance:")
     print(f"R2 Score: {r2:.3f}")
     print(f"Root Mean Squared Error: {rmse:.3f}")
-
+    
     end_time = time()
-    print(f"\n[INFO] Total execution time: {timedelta(seconds=end_time - start_time)} \n")
-
+    print(f"[INFO] Total execution time: {timedelta(seconds=end_time - start_time)}")
+    
     return svm_model, (r2, rmse), (y_test, y_pred)
+
+
 
 def generate_summary_report(y_test, y_pred):
     """
@@ -863,3 +993,32 @@ def prebuild():
     download_imdb_data(data_dir)
     initial_load_and_merge(data_dir)
     augment_add_columns(data_dir)
+
+def histogram_likert(df):
+    """
+    Generates a histogram for the 'experienced_actors_likert' column 
+    with a minimal theme and customized titles.
+
+    Parameters:
+    -----------------
+    df : pandas DataFrame : The DataFrame containing the column to plot.
+    """
+    # Create the Histogram
+    fig = px.histogram(
+        df,
+        x='experienced_actors_likert', 
+        title='Likert Score Distribution',
+        width=800,  # Set the width of the plot
+        height=500,  # Set the height of the plot
+        template="simple_white"
+    )
+    
+    # Center the title
+    fig.update_layout(
+        title_x=0.5,
+        xaxis_title='Experienced Actors Likert Scores',
+        yaxis_title='Count'
+    )
+                     
+    fig.show()
+

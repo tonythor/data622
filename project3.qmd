@@ -109,7 +109,7 @@ img {
 
 ## Executive Summary
 
-This project compares two machine learning approaches—Random Forest and Support Vector Machines (SVM)—for predicting IMDB movie ratings. Through multiple iterations and optimizations, Random Forest consistently outperformed SVM, achieving 84% accuracy within one rating bin compared to SVM's 55%. This better performance can be attributed to Random Forest's natural ability to handle our dataset's complex characteristics: high dimensionality (37 features), mixed data types (binary and continuous), and non-linear relationships between features. While we successfully improved SVM's performance through feature scaling and kernel optimization, Random Forest proved to be inherently better suited for this prediction task.
+This project compares two machine learning approaches—Random Forest and Support Vector Machines (SVM)—for predicting IMDB movie ratings. Through multiple iterations and optimizations, Random Forest consistently outperformed SVM, achieving 84% accuracy within one rating bin compared to SVM's 58.99%. This better performance can be attributed to Random Forest's natural ability to handle our dataset's complex characteristics: high dimensionality (37 features), mixed data types (binary and continuous), and non-linear relationships between features. While we successfully improved SVM's performance through feature scaling and kernel optimization, Random Forest proved to be inherently better suited for this prediction task.
 
 ## Project Overview
 
@@ -229,7 +229,7 @@ generate_summary_report(*predictions2)
 * 64.38% within 1 bin
 * 19.5% major errors
 * R² Score: -3186.443 (extremely poor)
-* RMSE: 78.555 (extremely high)
+* RMSE: 78.555 (extremely high in the context of our dataset)
 
 ### Comparison -> Random Forest wins on all fronts:
 
@@ -259,8 +259,21 @@ Though we made the case for Random Forest after we tested both models, this pref
 
 ## Rerunning the model with dedicated SVM adjustments
 
-In optimizing the SVM model for the second run, we implemented several best practices to improve performance on our dataset. First, we selected the RBF kernel over the linear kernel, as it is known to perform better with non-linear relationships, and our data is non-linear. Next, we applied stratified sampling to ensure balanced representation of each rating bin, reducing potential model bias by preserving class proportions. See this demonstrated multiple ways in in [Applied Predictive Modeling by Max Kuhn and Kjell Johnson ](https://vuquangnguyen2016.wordpress.com/wp-content/uploads/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf). We also scaled all features using StandardScaler, which is critical for SVM since unscaled features can distort the model’s decision boundary. Learn more about the StandardScaler in [Hands-On Machine Learning by Aurélien Géron](http://14.139.161.31/OddSem-0822-1122/Hands-On_Machine_Learning_with_Scikit-Learn-Keras-and-TensorFlow-2nd-Edition-Aurelien-Geron.pdf). Finally, implemented sampling as our dataset was too big and with too many features to run across the whole dataset.  (We did try though!)
+In optimizing the SVM model for the second run, we implemented several best practices to improve performance on our dataset. First, we applied stratified sampling to ensure balanced respresentation of each rating bin, reducing potential model bias by preserving class proportions. Below, we can see that there is a disproportionate distribution of each rating bin. Stratified sampling will address this imbalance. See this demonstrated multiple ways in in [Applied Predictive Modeling by Max Kuhn and Kjell Johnson ](https://vuquangnguyen2016.wordpress.com/wp-content/uploads/2018/03/applied-predictive-modeling-max-kuhn-kjell-johnson_1518.pdf). 
 
+```{python histogram}
+histogram_likert(df=df_dropped2)
+```
+
+We also scaled all features using StandardScaler, which is critical for SVM since unscaled features can distort the model’s decision boundary. Learn more about the StandardScaler in [Hands-On Machine Learning by Aurélien Géron](http://14.139.161.31/OddSem-0822-1122/Hands-On_Machine_Learning_with_Scikit-Learn-Keras-and-TensorFlow-2nd-Edition-Aurelien-Geron.pdf).
+
+Finally, we implemented RandomizedSearchCV to find the best parameters for our SVM model. This approach explores a subset of the hyperparameter space efficiently, striking a balance between computational cost and performance. RandomizedSearch CV found that the best hyperparameters were as follows:
+
+* Kernel: RBF
+* Epsilon: 0.5
+* C: 100
+
+These improvements collectively resulted in a more robust and effective SVM model, addressing dataset imbalances, ensuring proper feature scaling, and optimizing hyperparameters.
 
 ```{python svm2}
 df_dropped3 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names']).dropna(subset=['num_actors'])
@@ -274,11 +287,11 @@ generate_summary_report(*predictions3)
 * Uses stratified sampling to ensure balanced representation of rating bins
 * Added feature scaling (StandardScaler) - crucial for SVM performance
 * Reduced sample size to 50,000 rows total
-* Better R² score (0.285 vs -3186.443)
-* Much better RMSE (2.184 vs 78.555)
-* Slightly lower accuracy (55% vs 64% within 1 bin), possibly due to smaller but more balanced sample
-* Similar exact match rate (22% vs 27%)
-* Slightly higher major error rate (24% vs 20%)
+* Better R² score (0.294 vs -3186.443)
+* Much better RMSE (2.110 vs 78.555)
+* Slightly lower accuracy (58.99% vs 64% within 1 bin), possibly due to smaller but more balanced sample
+* Similar exact match rate (22.7% vs 27%)
+* Slightly higher major error rate (21.4% vs 20%)
 
 Despite these improvements, Random Forest still significantly outperforms both SVM approaches for this particular problem.
 
@@ -286,6 +299,6 @@ Despite these improvements, Random Forest still significantly outperforms both S
 ## Conclusions 
 This data is more easily predicted using Random Forest. The dataset contains 37 features, making it highly dimensional, and includes a mix of binary features (like genre indicators) and continuous features (like runtime and number of votes). There are likely non-linear relationships between features (such as how actor experience influences ratings differently at different budget levels) and complex interactions between features (like how certain genres might amplify or diminish the impact of other features).
 
-Random Forest works better because it naturally handles these complexities. It doesn't require feature scaling since each decision tree makes binary splits, handles mixed data types seamlessly, and automatically captures feature interactions through its tree structure. Its ensemble nature means it can effectively model non-linear relationships, and its random feature sampling at each split makes it particularly well-suited for high-dimensional data. These characteristics make Random Forest a natural fit for this kind of complex, heterogeneous dataset, as demonstrated by its superior performance (84% accuracy within one rating bin compared to SVM's 55%).
+Random Forest works better because it naturally handles these complexities. It doesn't require feature scaling since each decision tree makes binary splits, handles mixed data types seamlessly, and automatically captures feature interactions through its tree structure. Its ensemble nature means it can effectively model non-linear relationships, and its random feature sampling at each split makes it particularly well-suited for high-dimensional data. These characteristics make Random Forest a natural fit for this kind of complex, heterogeneous dataset, as demonstrated by its superior performance (84% accuracy within one rating bin compared to SVM's 58.99%).
 
 
