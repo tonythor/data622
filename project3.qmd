@@ -195,8 +195,8 @@ This is straight from project 2's code base.
 ```{python rf}
 #This assumes a number of votes already. Unlikely. 
 df_dropped1 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names'])
-model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1)
-generate_summary_report(*predictions1)
+model1, importance1, metrics1, predictions1 = train_and_evaluate_rf(df_dropped1, show_output=False)
+generate_summary_report(*predictions1, report_name="Project 2 RF")
 ```
 
 
@@ -208,8 +208,8 @@ For this first run, we'll use almost exactly the same code base and data as we d
 # Drop unnecessary columns
 df_dropped2 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names']).dropna(subset=['num_actors'])
 df_sampled = df_dropped2.sample(frac=0.05, random_state=42)  # Adjust frac as needed
-model2, metrics2, predictions2 = train_and_evaluate_svm(df_sampled, kernel='linear')
-generate_summary_report(*predictions2)
+model2, metrics2, predictions2 = train_and_evaluate_svm(df_sampled, kernel='linear', show_output=False)
+generate_summary_report(*predictions2, report_name="SVM (first run / not optimized)")
 ```
 
 
@@ -255,7 +255,7 @@ Though we made the case for Random Forest after we tested both models, this pref
 
 * We used a linear kernel which might be too simple for this data. We could have used the RBF kernel 
 * We sampled only 5% of the data to train
-* SVMs typically need more feature scaling/normalization. We didn't do any of that
+* SVMs typically need more feature scaling/normalization. We didn't do any of that.
 
 ## Rerunning the model with dedicated SVM adjustments
 
@@ -277,8 +277,8 @@ These improvements collectively resulted in a more robust and effective SVM mode
 
 ```{python svm2}
 df_dropped3 = df.drop(columns=['tconst', 'primaryTitle', 'actor_names']).dropna(subset=['num_actors'])
-model3, metrics3, predictions3 = train_and_evaluate_svm_optimized(df_dropped3)
-generate_summary_report(*predictions3)
+model3, metrics3, predictions3 = train_and_evaluate_svm_optimized(df_dropped3, show_output=False)
+generate_summary_report(*predictions3,report_name="SVM (optimized)")
 ```
 
 ### Comparing SVM Optimized run with SVM First Run: 
