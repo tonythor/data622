@@ -1,7 +1,7 @@
 ---
-title: "Project 2: IMDB Ratings using Random Forest"
+title: "Project 2: Decision Trees vs Random Forest: Predicting IMDB Ratings"
 author: "Team: I Love Lucy"
-date: "2 Nov 2024"
+date: "18 Nov 2024"
 output:
   html_document:
     toc: true
@@ -101,10 +101,14 @@ img {
 }
 </style>
 <!-- build with:  ./build.sh -p 2 -h -->
-<p style="text-align: center;">
+<!-- <p style="text-align: center;">
   [github](https://github.com/tonythor/data622) &nbsp; | &nbsp; [web presentation](https://rpubs.com/tonythor/data622-project2)
-</p>
+</p> -->
 
+<p style="text-align: center;">
+  <a href="https://github.com/tonythor/data622" target="_blank">github</a> &nbsp; | &nbsp; 
+  <a href="https://rpubs.com/tonythor/data622-project2" target="_blank" >web presentation</a>
+</p>
 
 ## Project Overview
 In this project, we set out to use Random Forest on the [IMDB non-commercial dataset](https://developer.imdb.com/non-commercial-datasets/)to predict movie ratings. While the dataset lacks financial performance metrics like box office revenue or streaming views, it provides key features such as ratings, genres, and cast information, which became the foundation of our analysis.
@@ -178,6 +182,8 @@ basic_tree, basic_metrics, basic_preds = train_and_evaluate_basic_tree(
 generate_summary_report(*basic_preds, "Basic Decision Tree")
 ```
 
+This basic model used only simple features like runtime and genres, providing a baseline for comparison.
+
 #### Complex Decision Tree Model
 ```{python complex_tree_03}
 # Train complex decision tree without vote counts
@@ -189,6 +195,10 @@ complex_tree, complex_metrics, complex_preds = train_and_evaluate_complex_tree(
 )
 generate_summary_report(*complex_preds, "Complex Decision Tree")
 ```
+
+The complex model added actor experience features, improving the R² score from 0.204 to 0.226 and reducing major mistakes from 4.9% to 4.5%. This shows that while adding complexity helps somewhat, a single tree still has limitations.
+
+
 
 ### Random Forest Models
 We'll examine Random Forest performance under two scenarios: including vote counts (which could introduce bias) and excluding them (more realistic for new movies).
@@ -224,58 +234,69 @@ generate_summary_report(*predictions_no_votes, "Random Forest (without votes)")
 # display(plot_importance(importance_no_votes))
 ```
 
+The Random Forest maintained the accuracy improvements while being more robust, demonstrating how ensemble methods can overcome single tree limitations.
+
+### Summary of Model Performance
+
+| Model Type            | Exact Rating | Within 1 Point | Major Mistakes | R² Score |
+|--------------------- |--------------|----------------|----------------|----------|
+| Basic Decision Tree  | 38%          | 81%           | 4.9%          | 0.204    |
+| Complex Decision Tree| 38%          | 82%           | 4.5%          | 0.226    |
+| Random Forest (basic)| 39%          | 82%           | 5.0%          | 0.220    |
+| Random Forest (votes)| 42%          | 84%           | 4.0%          | 0.320    |
+
+The dramatic improvement in the Random Forest model when including vote counts (R² jumping from 0.220 to 0.320) reveals an important insight: number of votes is a strong predictor of rating because popular movies tend to be higher quality. This makes intuitive sense - a movie seen by thousands of people is likely to be reasonably good, while poor movies rarely attract large audiences. While this is useful to know, it's not helpful for our goal of predicting ratings for new movies that don't have votes yet. This finding reinforces our main lesson that the quality of input features matters more than model complexity.
+
 ## Comparing Our Approaches
 
-We tackled the challenge of predicting movie ratings using decision trees, learning from common problems highlighted in "The GOOD, The BAD & The UGLY of Using Decision Trees." Here's how we built and improved our approach:
+Now that we've seen the detailed performance of each model, let's examine how our different approaches addressed common decision tree challenges. Interestingly, the results showed that all models achieved similar base accuracy (around 81-82% within one rating point), with only modest improvements from added complexity.
 
-1. **Simple Decision Tree**
-- Used just basic features like movie length and genres
-- Often made big mistakes when movies didn't fit typical patterns
-- Showed us why single decision trees can be too rigid
+1. **Simple Decision Tree** (81% accurate, R² 0.204)
+- Used basic features like movie length and genres
+- Provided surprisingly good baseline performance
+- Showed that simple approaches can be effective
 
-2. **Complex Decision Tree**
-- Added more features like actor experience scores
-- Got slightly better results but started to look messy
-- Demonstrated the "memorization" problem mentioned in the blog
+2. **Complex Decision Tree** (82% accurate, R² 0.226)
+- Added actor experience scores and more features
+- Improved R² score slightly but not dramatically
+- Demonstrated that more complexity doesn't always mean better results
 
-3. **Random Forest Solution**
-- Combined many trees to avoid single tree problems
-- Performed more consistently across different types of movies
-- Solved many issues the blog warned about
+3. **Random Forest Models**
+- Basic version (82% accurate, R² 0.220): Performed similarly to complex tree
+- With votes (84% accurate, R² 0.320): Showed meaningful improvement
+- Highlighted that feature selection matters more than model complexity
 
-The blog mentioned how decision trees can "blow up" with too many options - we saw this firsthand. Our simple tree was too basic, our complex tree started memorizing data, but the Random Forest found a good balance.
-
+The blog warned about trees becoming unwieldy with too many options, but our experience showed a different challenge: getting meaningful improvements from added complexity. The real gains came not from model choice but from thoughtful feature engineering.
 
 ## Learning From Past Decision Tree Problems
 
-The blog warned about several real world problems with decision trees. Here's how we dealt with each one:
+The blog warned about several problems, but our experience revealed some nuances:
 
 **Problem 1: Trees That Memorize Instead of Learn**
-- Blog Example: Customer service chatbots that only work for exact matches
-- Our Solution: Used Random Forest to average out individual tree mistakes
-- Result: More reliable predictions even for unusual movies
+- Blog Warning: Models that can't generalize
+- Our Finding: Even simple trees generalized reasonably well
+- Lesson: Good feature engineering may matter more than model complexity
 
 **Problem 2: Too Many Options**
-- Blog Example: Product recommendation trees that get overwhelmed with too many options (like having thousands of individual products)
-- Our Solution: Created simpler categories by converting thousands of actors into simple 1-5 experience scores
-- Result: Made predictions possible without getting lost in endless detail
+- Blog Warning: Trees getting overwhelmed with choices
+- Our Solution: Converted complex data (thousands of actors) into simple scores
+- Result: Even simple models performed well with cleaned, structured data
 
 **Problem 3: Hard to Maintain**
-- Blog Example: Support systems that break when adding new options
-- Our Solution: Created features that work automatically for new movies
-- Result: System that can handle new actors and movies
+- Blog Warning: Systems that break easily
+- Our Approach: Created robust, reusable features
+- Result: A stable system that works for new movies
 
 ## Conclusion
 
-Our work with decision trees taught us several important lessons:
-- Simple trees can work, but need careful feature design
-- The problems mentioned in the blog are real - we hit most of them
-- Random Forests help, but good data preparation matters more
-- Getting 80% accuracy within one rating point shows this approach works
+Our work with decision trees taught us some surprising lessons:
+- Simple approaches can work surprisingly well
+- Feature engineering matters more than model complexity
+- Random Forests help most when you have strong signals (like vote counts)
 
-While our approach successfully tackles the main problems discussed in the blog, we see several ways to make it even better:
-- Adding automated updates for new movies
-- Testing more thoroughly with different types of movies
-- Using more specific actor traits beyond just experience
+While our approach works, we see opportunities for improvement:
+- Finding stronger predictive features
+- Better handling of rare or unusual cases
+- More sophisticated actor experience metrics
 
-Most importantly, we learned that success with decision trees isn't just about the model - it's about understanding their limitations and designing solutions that work around them. Our approach might not be perfect, but it demonstrates how thoughtful feature engineering and Random Forests can overcome common decision tree problems while delivering practical value.
+Most importantly, we learned that success with decision trees isn't just about avoiding their limitations - it's about understanding what actually drives predictions. Our experience suggests that thoughtful data preparation matters more than model complexity for real-world applications.

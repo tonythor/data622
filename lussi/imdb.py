@@ -715,9 +715,9 @@ def generate_summary_report(y_test, y_pred, report_name="CHANGE ME"):
     
     # Create summary as a single f-string
     summary = f"""
-{'='*80}
+{'='*70}
 Results for: {report_name}
-{'='*80}
+{'='*70}
 
 Quick Summary:
 - Gets the exact rating {exact_matches:.0%} of the time
