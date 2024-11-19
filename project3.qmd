@@ -100,12 +100,19 @@ img {
     margin-right: auto; /* Center image */
 }
 </style>
-<!-- build with:  ./build.sh -p 2 -h -->
-<p style="text-align: center;">
+<!-- build with:  ./build.sh -p 3 -h -->
+<!-- <p style="text-align: center;">
   [github](https://github.com/tonythor/data622) &nbsp; | 
   &nbsp; [project 2](https://rpubs.com/tonythor/data622-project2) |
   &nbsp; [project 3](https://rpubs.com/tonythor/data622-project3)
+</p> -->
+
+<p style="text-align: center;">
+  <a href="https://github.com/tonythor/data622" target="_blank">github</a> &nbsp; | &nbsp; 
+  <a href="https://rpubs.com/tonythor/data622-project2" target="_blank" >project 2</a>
+  <a href="https://rpubs.com/tonythor/data622-project3" target="_blank" >project 3</a>
 </p>
+
 
 ## Executive Summary
 
