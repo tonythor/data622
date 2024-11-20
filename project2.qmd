@@ -111,7 +111,7 @@ img {
 </p>
 
 ## Project Overview
-In this project, we set out to use Random Forest on the [IMDB non-commercial dataset](https://developer.imdb.com/non-commercial-datasets/)to predict movie ratings. While the dataset lacks financial performance metrics like box office revenue or streaming views, it provides key features such as ratings, genres, and cast information, which became the foundation of our analysis.
+In this project, we set out to use Random Forest on the [IMDB non-commercial dataset](https://developer.imdb.com/non-commercial-datasets/) to predict movie ratings. While the dataset lacks financial performance metrics like box office revenue or streaming views, it provides key features such as ratings, genres, and cast information, which became the foundation of our analysis.
 
 This project provided an ideal test case for exploring decision tree limitations, as movie ratings involve both categorical (genres) and numerical (runtime) features, similar to many real world applications.
 
@@ -290,11 +290,13 @@ The blog warned about several problems, but our experience revealed some nuances
 ## Conclusion
 
 Our work with decision trees taught us some surprising lessons:
+
 - Simple approaches can work surprisingly well
 - Feature engineering matters more than model complexity
 - Random Forests help most when you have strong signals (like vote counts)
 
 While our approach works, we see opportunities for improvement:
+
 - Finding stronger predictive features
 - Better handling of rare or unusual cases
 - More sophisticated actor experience metrics
