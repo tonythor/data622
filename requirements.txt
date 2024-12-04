@@ -1,48 +1,71 @@
-pydantic==1.10.14
-imblearn
-scipy==1.12
-scikit-learn
-python-dotenv
-langchain
-langchain_openai
-openai
-llama-cpp-python==0.1.78
-numpy==1.23.4
-pip
-ipython
-nltk
-requests
-wheel
-awscli
-requests
-gensim
-pyreadr
-jupyter
-loguru
-torch
-jupyterlab
-transformers
-joblib
-huggingface_hub
-simpletransformers
-accelerate
-catboost
-xgboost
-fasttext
-pymc-bart
-ipykernel
-selenium 
-beautifulsoup4
-geopandas
-seaborn
-statsmodels
-qgrid
-ipywidgets==7.7.2
-jupyterlab_widgets
-itables
+# for project 4 only
 
-# pip install --upgrade -r requirements.txt
-pandas
-pyarrow>=13.0.0
-ipysheet
-kaleido
+# clean out all the old stuff
+# pip freeze | xargs pip uninstall -y 
+
+numpy 
+scikit-learn>=1.0.0
+tensorflow>=2.8.0
+matplotlib>=3.4.0
+seaborn>=0.11.0
+joblib>=1.1.0
+
+
+#
+# pydantic==2.7.4
+# Cython
+# imblearn
+# scipy==1.12
+# scikit-learn==1.5.1
+# python-dotenv
+# langchain==0.3.8
+# langchain_openai
+# openai
+# llama-cpp-python==0.1.78
+# numpy==1.23.4
+# pip
+# ipython
+# nltk
+# requests
+# wheel
+# awscli
+# requests
+# gensim==4.3.3
+# pyreadr==0.5.2
+# jupyter
+# loguru
+# torch
+# jupyterlab
+# transformers==4.46.3
+# joblib
+# huggingface_hub
+# simpletransformers==0.70.1
+# accelerate==1.1.1
+# catboost==1.2.7
+# xgboost==2.1.3
+# fasttext==0.9.3
+# pymc-bart==0.7.1
+# ipykernel
+# selenium 
+# beautifulsoup4
+# geopandas==1.0.1
+# seaborn==0.13.2
+# statsmodels==0.14.4
+# qgrid==1.3.1
+# ipywidgets==7.7.2
+# jupyterlab_widgets
+# itables==2.2.3
+
+# # pip install --upgrade -r requirements.txt
+# pandas
+# pyarrow>=13.0.0
+
+
+# ipysheet
+# kaleido
+
+# numpy 
+# scikit-learn
+# tensorflow 
+# matplotlib
+
