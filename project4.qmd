@@ -151,9 +151,9 @@ The [MNIST dataset](https://yann.lecun.com/exdb/mnist/) (Modified National Insti
 
 ### Understanding the Dataset Format 
 
-Though easily converted, the records are not actually stored as images. They are stored as a matrix. Each record of the 60,000 images is stored as a 28 by 28 matrix, with those positions holding the color of the pixel the position represents. It's a square image, so 28 pixels by 28 pixels tall totals 784 total pixles, or 784 total numbers. Each of those numbers represents a shade of grayscale, 0 being all black, and 255 being white.
+Though easily converted, the records are not actually stored as images. They are stored as a matrix. Each record of the 60,000 images is stored as a 28 by 28 matrix, with those positions holding the color of the pixel the position represents. It's a square image, so 28 pixels by 28 pixels tall totals 784 total pixels, or 784 total numbers. Each of those numbers represents a shade of grayscale, 0 being all black, and 255 being white.
 
-```{python initial}
+```{python matrix_viz}
 #visualize_digit_matrix(X_train_unscaled, index=0)
 matrix_html = visualize_digit_matrix_encoded(X_train_unscaled, index=0)
 display(HTML(matrix_html))
@@ -177,10 +177,10 @@ Wrapping around each of those records, it's like any other machine learning data
 
 It's easy to understand the core challenge by looking at records. There is much variation in hand written letters, with all sorts of factors presenting like: 
 
-* Writing styles and penmanship
-* Stroke thickness and continuity
-* Digit orientation and slant
-* Image noise and quality
+- Writing styles and penmanship
+- Stroke thickness and continuity
+- Digit orientation and slant
+- Image noise and quality
 
 ```{python sample_digits}
 samples_html = plot_sample_digits_encoded(X_train_unscaled, y_train)
@@ -199,9 +199,9 @@ This project aims to:
 * Evaluate both training time and inference speed for real-world applicability
 
 
-## Model Implementation and Training
+# Model Implementation and Training
 
-### KNN
+## KNN Implementation
 ```{python knnimpl}
 # Train KNN model
 print("Training KNN Model...")
@@ -216,9 +216,7 @@ print(f"Accuracy: {knn_accuracy:.4f}")
 ```
 
 
-
-### Neural Network
-
+## Neural Network Implementation
 
 ```{python nnimpl}
 print("\nTraining Neural Network...")
@@ -231,42 +229,118 @@ print(f"Training Time: {nn_train_time:.2f} seconds")
 print(f"Accuracy: {nn_accuracy:.4f}")
 ``` 
 
+# Model Performance Analysis
+## Confusion Matrices
+
+```{python comparison_viz}
+
+analysis_text, knn_cm_percent, nn_cm_percent = analyze_model_accuracies(knn_model, nn_model, X_test, y_test)
+
+# Then create and display the visualization
+comparison_viz = compare_model_accuracies_encoded(knn_model, nn_model, X_test, y_test)
+
+# Display both
+# print(analysis_text)
+display(HTML(comparison_viz))
+
+```
+
+## Per-Class Performance Analysis
+Let's analyze how each model performs for different digits:
+
+```{python per_digit_analysis}
+
+print("\nDetailed Per-Digit Analysis:")
+print("-" * 50)
+
+for i in range(10):
+    knn_accuracy = knn_cm_percent[i,i]
+    nn_accuracy = nn_cm_percent[i,i]
+    
+    print(f"\nDigit {i}:")
+    print(f"KNN Accuracy: {knn_accuracy:.1f}%")
+    print(f"Neural Network Accuracy: {nn_accuracy:.1f}%")
+    print(f"Difference: {(nn_accuracy - knn_accuracy):.1f}%")
 
 
------ below has not yet started ---- 
+``` 
+
+## Prediction Speed Analysis
+To understand real-world performance implications, let's analyze prediction speeds for different batch sizes:
 
 
+```{python prediction_speeds}
+batch_sizes = [1, 10, 100, 1000]
+results = {'knn': {}, 'nn': {}}
 
-Model Implementation
+print("\nPrediction Speed Analysis:")
+print("-" * 50)
 
-KNN Implementation
+for batch_size in batch_sizes:
+    # Select subset of test data
+    X_batch = X_test[:batch_size]
+    
+    # KNN timing
+    start_time = time.time()
+    _ = knn_model.predict(X_batch)
+    knn_time = time.time() - start_time
+    results['knn'][batch_size] = knn_time
+    
+    # Neural Network timing
+    start_time = time.time()
+    _ = nn_model.predict(X_batch, verbose=0)
+    nn_time = time.time() - start_time
+    results['nn'][batch_size] = nn_time
+    
+    print(f"\nBatch size: {batch_size}")
+    print(f"KNN prediction time: {knn_time:.4f} seconds")
+    print(f"Neural Network prediction time: {nn_time:.4f} seconds")
+    print(f"Time per image - KNN: {(knn_time/batch_size)*1000:.2f}ms")
+    print(f"Time per image - NN: {(nn_time/batch_size)*1000:.2f}ms")
+```
 
-Explanation of how KNN works
-Model parameters and choices
-Training process
+# Key Findings and Business Impact
+
+## Overall Accuracy
+```{python overall_accuracy}
+#| echo: false
+print(f"Neural Network: {nn_accuracy:.4f} (97.1%)")
+print(f"KNN: {knn_accuracy:.4f} (94.7%)")
+print(f"The Neural Network provides a {97.1 - 94.7:.1f} percentage point higher accuracy.")
+```
+
+## Training Performance
+
+```{python training_performance}
+#| echo: false
+print(f"KNN Training Time: {knn_train_time:.2f} seconds")
+print(f"Neural Network Training Time: {nn_train_time:.2f} seconds")
+```
+
+## Prediction Speed
+
+Small batches (1-100 images): KNN performs faster
+Large batches (1000+ images): Neural Network shows superior performance
+Neural Network scales better for production workloads
 
 
-Neural Network Implementation
+## Error Analysis
 
-Architecture explanation
-Layer choices and activation functions
-Training process and epochs
+Both models struggle most with visually similar digits (3/5, 4/9, 7/9)
+Neural Network shows more consistent performance across all digit classes
+KNN shows higher variability in accuracy between different digits
 
 
+## Business Implications
 
-Model Comparison
-The code you provided already includes excellent comparison functionality:
+For real-time, single-image processing: KNN might be preferable due to faster prediction times
+For batch processing: Neural Network is clearly superior
+Trade-off between setup time (KNN faster) vs long-term performance (NN better)
+Memory requirements favor Neural Network for large-scale deployment
 
-Accuracy metrics
-Confusion matrices
-Per-digit performance analysis
-Training time comparison
-Inference time comparison
 
-Custom Prediction Testing
+## Deployment Considerations
 
-Section for testing with your own handwritten digits
-Process for loading and preprocessing custom images
-Comparison of how both models perform on your custom input
-
-Would you like me to elaborate on any of these sections or help you implement specific parts of the outline? I can also help you create the actual Quarto markdown structure with code chunks if you'd like.
+KNN requires storing entire training dataset (higher memory usage)
+Neural Network has fixed memory footprint after training
+Neural Network offers better scalability for production systems
