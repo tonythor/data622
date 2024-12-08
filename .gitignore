@@ -188,3 +188,7 @@ svm_model.joblib
 svm_model_opt.joblib
 *.joblib
 nn_mnist_model.keras
+
+project4.html 
+project4_files/
+
