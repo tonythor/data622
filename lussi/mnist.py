@@ -1,20 +1,23 @@
+import base64
+import io
+import math
+import os
+import time
+
+# Third-party library imports
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import joblib
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from tensorflow import keras
-import time
-import matplotlib.pyplot as plt
-import os
-import joblib
-import math
-import io
-import base64
-import math
-from IPython.display import HTML
 import pandas as pd
 
+# IPython specific imports
+from IPython.display import HTML
 
 # Constants for model file paths
 KNN_MODEL_PATH = 'knn_mnist_model.joblib'
@@ -82,17 +85,6 @@ def plot_sample_digits_encoded(X, y, num_samples=60, num_rows=6):
     plt.tight_layout()
     return encode_plt_image()
 
-def plot_digit_distribution_encoded(y):
-    """Plot distribution of digits in the dataset, returns base64 encoded image."""
-    plt.figure(figsize=(10, 5))
-    plt.hist(y, bins=10, rwidth=0.8)
-    plt.title('Distribution of Digits in Dataset')
-    plt.xlabel('Digit')
-    plt.ylabel('Count')
-    plt.xticks(range(10))
-    plt.grid(True, alpha=0.3)
-    
-    return encode_plt_image()
 
 def plot_confusion_matrices_encoded(knn_model, nn_model, X_test, y_test):
     """Plot confusion matrices, returns base64 encoded image."""
@@ -224,7 +216,7 @@ def train_neural_network(X_train, X_test, y_train, y_test, rebuild_model=False):
             epochs=10,
             batch_size=128,
             validation_split=0.1,
-            verbose=1
+            verbose=0
         )
         
         # Save the model
@@ -254,27 +246,16 @@ def predict_single_image_nn(model, image):
     
     return predicted_digit, prediction_time
 
-
-def plot_training_history(history):
-    if history is None:
-        print("No training history available for loaded model")
-        return
-        
-    plt.figure(figsize=(10, 4))
-    plt.plot(history.history['accuracy'], label='Training Accuracy')
-    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-    plt.title('Model Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.legend()
-    plt.show()
-
-def plot_confusion_matrices(knn_model, nn_model, X_test, y_test):
+def compare_model_accuracies_encoded(knn_model, nn_model, X_test, y_test):
+    """
+    Creates a bar chart comparing KNN and Neural Network accuracies for each digit.
+    Returns base64 encoded image.
+    """
     from sklearn.metrics import confusion_matrix
-    import seaborn as sns
-    
-    # Create figure with two subplots side by side
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import io
+    import base64
     
     # Get predictions
     knn_pred = knn_model.predict(X_test)
@@ -284,116 +265,88 @@ def plot_confusion_matrices(knn_model, nn_model, X_test, y_test):
     knn_cm = confusion_matrix(y_test.astype(int), knn_pred.astype(int))
     nn_cm = confusion_matrix(y_test.astype(int), nn_pred.astype(int))
     
-    # Plot KNN confusion matrix
-    sns.heatmap(knn_cm, annot=True, fmt='d', cmap='Blues', ax=ax1)
-    ax1.set_title('KNN Confusion Matrix\n(Raw Counts)', pad=20)
-    ax1.set_xlabel('Predicted Label')
-    ax1.set_ylabel('True Label')
+    # Convert to percentages
+    knn_accuracies = np.diag(knn_cm.astype('float') / knn_cm.sum(axis=1)[:, np.newaxis] * 100)
+    nn_accuracies = np.diag(nn_cm.astype('float') / nn_cm.sum(axis=1)[:, np.newaxis] * 100)
+    digits = np.arange(10)
     
-    # Plot Neural Network confusion matrix
-    sns.heatmap(nn_cm, annot=True, fmt='d', cmap='Blues', ax=ax2)
-    ax2.set_title('Neural Network Confusion Matrix\n(Raw Counts)', pad=20)
-    ax2.set_xlabel('Predicted Label')
-    ax2.set_ylabel('True Label')
+    # Create figure and axis
+    plt.figure(figsize=(12, 6))
+    
+    # Plot bars
+    bar_width = 0.35
+    plt.bar(digits - bar_width/2, knn_accuracies, bar_width, 
+            label='KNN', color='#1f77b4', alpha=0.8)
+    plt.bar(digits + bar_width/2, nn_accuracies, bar_width,
+            label='Neural Network', color='#2ca02c', alpha=0.8)
+    
+    # Customize plot
+    plt.xlabel('Digit', fontsize=12)
+    plt.ylabel('Accuracy (%)', fontsize=12)
+    plt.title('Model Accuracy Comparison by Digit', fontsize=14, pad=20)
+    plt.xticks(digits)
+    plt.ylim(85, 100)  # Focus on the relevant range
+    
+    # Add grid for better readability
+    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+    
+    # Add legend
+    plt.legend()
+    
+    # Add value labels on top of bars
+    for i in digits:
+        plt.text(i - bar_width/2, knn_accuracies[i] + 0.5, f'{knn_accuracies[i]:.1f}%',
+                ha='center', va='bottom', fontsize=9)
+        plt.text(i + bar_width/2, nn_accuracies[i] + 0.5, f'{nn_accuracies[i]:.1f}%',
+                ha='center', va='bottom', fontsize=9)
     
     plt.tight_layout()
-    plt.show()
     
-    # Calculate and plot percentages
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+    # Convert plot to base64 encoded image
+    img_buf = io.BytesIO()
+    plt.savefig(img_buf, format='png', bbox_inches='tight')
+    plt.close()
+    img_buf.seek(0)
+    img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
+    
+    return f'<img src="data:image/png;base64,{img_base64}" alt="Model Accuracy Comparison" />'
+
+def analyze_model_accuracies(knn_model, nn_model, X_test, y_test):
+    """
+    Analyzes per-digit accuracy for both KNN and Neural Network models.
+    Returns the analysis results as a formatted string and the confusion matrices.
+    """
+    from sklearn.metrics import confusion_matrix
+    import numpy as np
+    
+    # Get predictions
+    knn_pred = knn_model.predict(X_test)
+    nn_pred = nn_model.predict(X_test).argmax(axis=1)
+    
+    # Calculate confusion matrices
+    knn_cm = confusion_matrix(y_test.astype(int), knn_pred.astype(int))
+    nn_cm = confusion_matrix(y_test.astype(int), nn_pred.astype(int))
     
     # Convert to percentages
     knn_cm_percent = knn_cm.astype('float') / knn_cm.sum(axis=1)[:, np.newaxis] * 100
     nn_cm_percent = nn_cm.astype('float') / nn_cm.sum(axis=1)[:, np.newaxis] * 100
     
-    # Plot KNN percentage confusion matrix
-    sns.heatmap(knn_cm_percent, annot=True, fmt='.1f', cmap='Blues', ax=ax1)
-    ax1.set_title('KNN Confusion Matrix\n(Percentages)', pad=20)
-    ax1.set_xlabel('Predicted Label')
-    ax1.set_ylabel('True Label')
+    # Generate analysis text
+    analysis_text = "\nDetailed Per-Digit Analysis:\n"
+    analysis_text += "-" * 50 + "\n"
     
-    # Plot Neural Network percentage confusion matrix
-    sns.heatmap(nn_cm_percent, annot=True, fmt='.1f', cmap='Blues', ax=ax2)
-    ax2.set_title('Neural Network Confusion Matrix\n(Percentages)', pad=20)
-    ax2.set_xlabel('Predicted Label')
-    ax2.set_ylabel('True Label')
-    
-    plt.tight_layout()
-    plt.show()
-    
-    # Print some additional metrics
-    print("\nDetailed Analysis:")
-    
-    # Calculate per-class accuracy
     for i in range(10):
-        print(f"\nDigit {i}:")
-        print(f"KNN - Accuracy: {knn_cm_percent[i,i]:.1f}%")
-        print(f"Neural Network - Accuracy: {nn_cm_percent[i,i]:.1f}%")
+        knn_accuracy = knn_cm_percent[i,i]
+        nn_accuracy = nn_cm_percent[i,i]
         
-        # Calculate most common misclassifications
-        knn_errors = [(j, knn_cm[i,j]) for j in range(10) if j != i and knn_cm[i,j] > 0]
-        nn_errors = [(j, nn_cm[i,j]) for j in range(10) if j != i and nn_cm[i,j] > 0]
-        
-        if knn_errors:
-            most_common_knn = max(knn_errors, key=lambda x: x[1])
-            print(f"KNN - Most often misclassified as {most_common_knn[0]} ({most_common_knn[1]} times)")
-            
-        if nn_errors:
-            most_common_nn = max(nn_errors, key=lambda x: x[1])
-            print(f"NN - Most often misclassified as {most_common_nn[0]} ({most_common_nn[1]} times)")
+        analysis_text += f"\nDigit {i}:\n"
+        analysis_text += f"KNN Accuracy: {knn_accuracy:.1f}%\n"
+        analysis_text += f"Neural Network Accuracy: {nn_accuracy:.1f}%\n"
+        analysis_text += f"Difference: {(nn_accuracy - knn_accuracy):.1f}%\n"
+    
+    return analysis_text, knn_cm_percent, nn_cm_percent
 
 
-def main(rebuild_model=False):
-    # Load and preprocess data
-    X_train, X_test, y_train, y_test, X_train_unscaled = load_data()
-    
-    # Visualize data (optional)
-    plot_sample_digits(X_train_unscaled, y_train, num_samples=10)
-    visualize_digit_matrix(X_train_unscaled, index=0)
-    plot_digit_distribution(y_train)
-    
-    # Train and evaluate models with timing
-    print("\nTraining Models:")
-    print("-" * 50)
-    
-    # Train and time KNN
-    start_time = time.time()
-    knn_model, knn_accuracy = train_knn(X_train, X_test, y_train, y_test, rebuild_model)
-    knn_train_time = time.time() - start_time
-    
-    # Train and time Neural Network
-    start_time = time.time()
-    nn_model, history, nn_accuracy = train_neural_network(X_train, X_test, y_train, y_test, rebuild_model)
-    nn_train_time = time.time() - start_time
-    
-    print("\nTraining Time Summary:")
-    print(f"KNN Training Time: {knn_train_time:.2f} seconds")
-    print(f"Neural Network Training Time: {nn_train_time:.2f} seconds")
-    
-    # Plot training history for Neural Network if available
-    plot_training_history(history)
-    
-    # Compare accuracy results
-    print("\nAccuracy Comparison:")
-    print(f"KNN Accuracy: {knn_accuracy:.4f}")
-    print(f"Neural Network Accuracy: {nn_accuracy:.4f}")
-    
-    # Perform detailed timing analysis
-    timing_results = perform_timing_analysis(knn_model, nn_model, X_test, y_test)
-    
-    # Plot confusion matrices
-    plot_confusion_matrices(knn_model, nn_model, X_test, y_test)
-
-# def plot_sample_digits(X, y, num_samples=10):
-#     """Plot a row of sample digits from the dataset."""
-#     plt.figure(figsize=(20, 2))
-#     for i in range(num_samples):
-#         plt.subplot(1, num_samples, i + 1)
-#         plt.imshow(X[i].reshape(28, 28), cmap='gray')
-#         plt.title(f'Digit: {y[i]}')
-#         plt.axis('off')
-#     plt.tight_layout()
-#     plt.show()
 
 def plot_sample_digits(X, y, num_samples=60, num_rows=6):
     """Plot a grid of sample digits from the dataset."""
@@ -413,26 +366,6 @@ def plot_sample_digits(X, y, num_samples=60, num_rows=6):
     plt.tight_layout()
     plt.show()
 
-def visualize_digit_matrix(X, index=0):
-    """Show the matrix representation for a single digit."""
-    digit = X[index].reshape(28, 28)
-    
-    plt.figure(figsize=(16, 16))  # Larger figure size
-    
-    # Show the matrix values
-    plt.imshow(digit, cmap='gray')
-    plt.title('28x28 Matrix Values')
-    
-    # Add all matrix values as text
-    for i in range(28):
-        for j in range(28):
-            plt.text(j, i, f'{digit[i, j]:.0f}', 
-                    ha='center', va='center', 
-                    color='red' if digit[i, j] > 0 else 'darkgray',
-                    fontsize=11)  # Slightly larger font size
-    
-    # plt.tight_layout()
-    plt.show()
 
 def plot_digit_distribution(y):
     """Plot distribution of digits in the dataset."""
@@ -453,62 +386,6 @@ def encode_plt_image():
     img_buf.seek(0)
     img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
     return f'<img src="data:image/png;base64,{img_base64}" alt="MNIST Visualization" />'
-
-
-def perform_timing_analysis(knn_model, nn_model, X_test, y_test):
-    """
-    Perform comprehensive timing analysis on both models.
-    """
-    # Batch size variations for testing
-    batch_sizes = [1, 10, 100, 1000]
-    results = {'knn': {}, 'nn': {}}
-    
-    print("\nTiming Analysis:")
-    print("-" * 50)
-    
-    # Test different batch sizes
-    for batch_size in batch_sizes:
-        # Select subset of test data
-        X_batch = X_test[:batch_size]
-        
-        # KNN timing
-        start_time = time.time()
-        knn_model.predict(X_batch)
-        knn_time = time.time() - start_time
-        results['knn'][batch_size] = knn_time
-        
-        # Neural Network timing
-        start_time = time.time()
-        nn_model.predict(X_batch, verbose=0)
-        nn_time = time.time() - start_time
-        results['nn'][batch_size] = nn_time
-        
-        print(f"\nBatch size: {batch_size}")
-        print(f"KNN prediction time: {knn_time:.4f} seconds")
-        print(f"Neural Network prediction time: {nn_time:.4f} seconds")
-        print(f"Time per image - KNN: {(knn_time/batch_size)*1000:.2f}ms")
-        print(f"Time per image - NN: {(nn_time/batch_size)*1000:.2f}ms")
-    
-    # Plot timing comparison
-    plt.figure(figsize=(10, 6))
-    batch_sizes_str = [str(size) for size in batch_sizes]
-    
-    x = np.arange(len(batch_sizes))
-    width = 0.35
-    
-    plt.bar(x - width/2, [results['knn'][size] for size in batch_sizes], width, label='KNN')
-    plt.bar(x + width/2, [results['nn'][size] for size in batch_sizes], width, label='Neural Network')
-    
-    plt.xlabel('Batch Size')
-    plt.ylabel('Prediction Time (seconds)')
-    plt.title('Model Prediction Time Comparison')
-    plt.xticks(x, batch_sizes_str)
-    plt.legend()
-    
-    plt.tight_layout()
-    plt.show()
-    
-    return results
 
 
 def create_comparison_table():

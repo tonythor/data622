@@ -409,7 +409,6 @@ compare_df = create_comparison_table()
 print(compare_df)
 ```
 
-
 ### Analysis
 
 **Performance Metrics:**
@@ -427,14 +426,103 @@ print(compare_df)
     - KNN's computational cost increases significantly with larger datasets or higher-dimensional data due to the need to calculate distances for all training samples during prediction.
     - Neural Networks scale better for larger datasets, as training is done once, and predictions are efficient after model training.
 
-
-**Per Digit Peformance Analysis:**
-
-```{python confusion-matrices}
-plot_confusion_matrices(knn_model, nn_model, X_test, y_test)
+## Confusion Matrices
+```{python comparison_viz}
+analysis_text, knn_cm_percent, nn_cm_percent = analyze_model_accuracies(knn_model, nn_model, X_test, y_test)
+# Then create and display the visualization
+comparison_viz = compare_model_accuracies_encoded(knn_model, nn_model, X_test, y_test)
+# Display both
+# print(analysis_text)
+display(HTML(comparison_viz))
 ```
 
-This detailed analysis shows that the Neural Network consistently outperforms KNN across all digits, especially for more complex digits like 8 and 9.
+## Per-Class Performance Analysis
+Let's analyze how each model performs for different digits:
+```{python per_digit_analysis}
+print("\nDetailed Per-Digit Analysis:")
+print("-" * 50)
+for i in range(10):
+    knn_accuracy = knn_cm_percent[i,i]
+    nn_accuracy = nn_cm_percent[i,i]
+    
+    print(f"\nDigit {i}:")
+    print(f"KNN Accuracy: {knn_accuracy:.1f}%")
+    print(f"Neural Network Accuracy: {nn_accuracy:.1f}%")
+    print(f"Difference: {(nn_accuracy - knn_accuracy):.1f}%")
+``` 
+## Prediction Speed Analysis
+To understand real-world performance implications, let's analyze prediction speeds for different batch sizes:
+```{python prediction_speeds}
+batch_sizes = [1, 10, 100, 1000]
+results = {'knn': {}, 'nn': {}}
+print("\nPrediction Speed Analysis:")
+print("-" * 50)
+for batch_size in batch_sizes:
+    # Select subset of test data
+    X_batch = X_test[:batch_size]
+    
+    # KNN timing
+    start_time = time.time()
+    _ = knn_model.predict(X_batch)
+    knn_time = time.time() - start_time
+    results['knn'][batch_size] = knn_time
+    
+    # Neural Network timing
+    start_time = time.time()
+    _ = nn_model.predict(X_batch, verbose=0)
+    nn_time = time.time() - start_time
+    results['nn'][batch_size] = nn_time
+    
+    print(f"\nBatch size: {batch_size}")
+    print(f"KNN prediction time: {knn_time:.4f} seconds")
+    print(f"Neural Network prediction time: {nn_time:.4f} seconds")
+    print(f"Time per image - KNN: {(knn_time/batch_size)*1000:.2f}ms")
+    print(f"Time per image - NN: {(nn_time/batch_size)*1000:.2f}ms")
+```
+
+# Key Findings and Business Impact
+
+## Overall Accuracy
+```{python overall_accuracy}
+#| echo: false
+print(f"Neural Network: {nn_accuracy:.4f} (97.1%)")
+print(f"KNN: {knn_accuracy:.4f} (94.7%)")
+print(f"The Neural Network provides a {97.1 - 94.7:.1f} percentage point higher accuracy.")
+```
+## Training Performance
+```{python training_performance}
+#| echo: false
+print(f"KNN Training Time: {knn_train_time:.2f} seconds")
+print(f"Neural Network Training Time: {nn_train_time:.2f} seconds")
+```
+
+## Prediction Speed
+
+Small batches (1-100 images): KNN performs faster
+Large batches (1000+ images): Neural Network shows superior performance
+Neural Network scales better for production workloads
+
+
+## Error Analysis
+
+Both models struggle most with visually similar digits (3/5, 4/9, 7/9)
+Neural Network shows more consistent performance across all digit classes
+KNN shows higher variability in accuracy between different digits
+
+
+## Business Implications
+
+For real-time, single-image processing: KNN might be preferable due to faster prediction times
+For batch processing: Neural Network is clearly superior
+Trade-off between setup time (KNN faster) vs long-term performance (NN better)
+Memory requirements favor Neural Network for large-scale deployment
+
+
+## Deployment Considerations
+
+KNN requires storing entire training dataset (higher memory usage)
+Neural Network has fixed memory footprint after training
+Neural Network offers better scalability for production systems
 
 
 ### Conclusion
