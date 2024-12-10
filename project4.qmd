@@ -126,17 +126,20 @@ X_train, X_test, y_train, y_test, X_train_unscaled = load_data()
 This project evaluates the performance of K-Nearest Neighbors (KNN) and Neural Networks for handwritten digit recognition using the MNIST dataset. The analysis reveals several key findings:
 
 Performance:
+
 - The Neural Network achieved 97.1% accuracy, outperforming KNN's 94.7% accuracy
 - The Neural Network showed more consistent performance across all digits, with accuracy ranging from 95.3% to 98.9%
 - KNN showed more variability, with accuracy ranging from 89.9% to 99.2%
 
 Computational Characteristics:
+
 - Training: KNN trained in 4.07 seconds vs. Neural Network's 16.05 seconds
 - Prediction Speed: 
   - For small batches (1-100 images), KNN was faster
   - For larger batches (1000 images), Neural Network was significantly faster (0.07ms vs 0.31ms per image)
 
 Error Patterns:
+
 - Both models struggled most with visually similar digits (e.g., 3/5, 4/9, 7/9)
 - KNN showed higher error rates for complex digits like '8' (89.9% accuracy)
 - Neural Network maintained >95% accuracy across all digit classes
@@ -202,22 +205,78 @@ This project aims to:
 ## Model Implementation and Training
 
 ### KNN
+
+**K-Nearest Neighbors (KNN)** is a non-parametic algorithm, supervised machine algorithm used for both classification and regression tasks. The fundamental principle of KNN is simple: classify a new data point based on the majority vote (classification) or average (regression) of its K nearest neighbors in the feature space. 
+
 ```{python knnimpl}
 # Train KNN model
 print("Training KNN Model...")
 start_time = time.time()
 knn_model, knn_accuracy = train_knn(X_train, X_test, y_train, y_test, rebuild_model=True)
 knn_train_time = time.time() - start_time
+```
 
+**Training Configuration:**
+
+- **Data Splitting:** 
+    - Used *train_test_split()* function to split the data:
+        - Training (80%)
+        - Testing (20%)
+    - An 80-20 split balances training data sufficiency and evaluation robustness
+- **Feature Scaling:**
+    - Used *StandardScalar()* to scale the data, ensuring all features contribute equally to the distance calculation.
+- **Lazy Learning:**
+    - KNN stores the entire training dataset and only makes predictions during inference
+
+
+
+**Prediction Process Mechanics:**
+
+1. **Distance Calculation**
+    - For the new data point, calculate its distance to all training points. 
+    - The default distance calculation method is Euclidean distance.
+    - Euclidean Distance formula: $d(p, q) = \sqrt{\sum_{i=1}^n (q_i - p_i)^2}$
+2. **Neighbor Selection** 
+    - Select the K closest points (neighbors)
+    - In this implementation, n_neighbors =3, making the prediction sensitive to local patterns.
+3. **Classification Method**
+    - Majority voting determines the class
+    - Most frequent class among K neighbors wins
+
+
+
+**Key Parameters:**
+
+- **Number of Neighbors: n_neighbors = 3**
+    * A small value (e.g., 3) captures local patterns but is prone to overfitting.
+    * Larger values smoothen predictions but may underfit.
+- **Distance Metric:**
+    * Default is Euclidean distance
+    * Other options include Manhattan or Minkowski distances for varying use cases.
+- **Weighting Scheme:**
+    * Default is Uniform, where all neighbors contribute equally.
+    * Weighted options give more influence to closer neighbors.
+
+
+
+**Performance Metrics:**
+```{python knnimpl-results}
 print(f"\nKNN Results:")
 print(f"Training Time: {knn_train_time:.2f} seconds")
 print(f"Accuracy: {knn_accuracy:.4f}")
-
 ```
 
 
 
+**Conclusion:**
+
+K-Nearest Neighbors offers a straightforward yet powerful approach to classification. By leveraging local neighborhood information and flexible distance calculations, KNN provides an interpretable method for pattern recognition in machine learning tasks.
+
+
+
 ### Neural Network
+
+A **neural network** is a machine learning algorithm inspired by the structure and function of the human brain. It is designed to learn relationships, recognize patterns, and make predictions by mimicking how biological neurons process and transmit information. Neural networks excel in handling complex, non-linear data, making them a versatile tool for tasks such as image recognition, natural language processing, and classification.
 
 
 ```{python nnimpl}
@@ -225,34 +284,171 @@ print("\nTraining Neural Network...")
 start_time = time.time()
 nn_model, history, nn_accuracy = train_neural_network(X_train, X_test, y_train, y_test, rebuild_model=True)
 nn_train_time = time.time() - start_time
+```
 
+
+**Architecture Overview:**
+
+We created a neural network designed for MNIST digit classification. It features a multi-layer feedforward architecture with strategic layer design and regularization techniques.
+
+
+**Detailed Layer Analysis:**
+
+1. Input Layer
+    - **Dimensions:** 784 neurons (28 x 28 pixel flattened image)
+    - **Purpose:** Direct mapping of pixel intensity values
+    - **Transformation:** Converts 2D image to 1D feature vector
+
+2. First Hidden Layer
+    - **Dimensions:** 256 neurons
+    - **Activation:** ReLU (Rectified Linear Unit)
+    - **Objectives:**
+        - Initial complex feature extraction
+        - Introduces non-linear transformations
+        - Captures primary image characteristics
+
+3. First Dropout layer
+    - **Dropout Rate:** 0.2 (20%)
+    - **Regularization Technique:**
+        - Randomly deactivates 20% of neurons during training
+        - Prevents model overfitting
+        - Reduces neuron interdependence
+
+4. Second Hidden Layer
+    - **Dimensions:** 128 neurons
+    - **Activation:** ReLU (Rectified Linear Unit)
+    - **Objectives:**
+        - Further abstract feature representations
+        - Progressively reduce feature dimensionality
+        - Refine initial feature extraction
+
+5. Second Dropout Layer
+    - **Dropout Rate:** 0.2 (20%)
+    - **Continues regularization strategy**
+    - Prevents neural network from becoming too specialized
+
+6. Third Hidden Layer
+    - **Dimensions:** 64 neurons
+    - **Activation:** ReLU (Rectified Linear Unit)
+    - **Objectives:**
+        - Final feature abstraction
+        - Prepares data for classification
+        - Further reduces feature complexity
+
+7. Output Layer
+    - **Neurons:** 10 (one per digit 0-9)
+    - **Activation:** Softmax
+    - **Characteristics:**
+        - Converts raw scores to probability distribution
+        - Ensures probabilities sum to 1
+        - Enables multi-class classification
+    
+
+
+**Training Configuration:**
+
+- **Hyperparameters:**
+
+    1. epochs
+        - **Total Iterations:** 10
+        - **Purpose:**
+            - Complete passes through entire training dataset
+            - Allows progressive weight refinement
+            - Prevents overfitting through limited iterations
+
+    2. batch_size
+        - **Configuration:** 128 samples per gradient update
+        - **Benefits:**
+            - Computational efficiency
+            - Gradient noise reduction
+            - Memory-friendly processing
+
+    3. validation_split
+        - **Allocation:** 10% of the training data
+        - **Functions:**
+            - Monitor model performance during training
+            - Detect potential overfitting 
+            - Provide real-time performance insights
+
+- **Optimization Strategy:**
+    - Adam
+        - Adaptive learning rate optimization
+        - Characteristics:
+            - Combines RMSprop and momentum advantages
+            - Dynamically adjusts per-parameter learning rates
+            - Handles sparse gradients effectively
+
+
+- **Loss Function:**
+    - Sparse Categorical Cross-Entropy
+        - Ideal for multi-class classification
+        - Measures:
+            - Difference between predicted and actual distributions
+            - Guides weight updates during backpropagation
+
+
+
+**Performance Metrics:**
+```{python nnimpl-results}
 print(f"\nNeural Network Results:")
 print(f"Training Time: {nn_train_time:.2f} seconds")
 print(f"Accuracy: {nn_accuracy:.4f}")
 ``` 
 
+**Conclusion**
+
+The neural network architecture is carefully designed to balance complexity, feature extraction, and generalization. By incorporating strategic layer design, dropout regularization, and adaptive optimization, the model achieves robust performance in MNIST digit classification.
+
+
+## Model Comparison
+
+In this section, we compare the performance of the K-Nearest Neighbors (KNN) algorithm and the Neural Network (NN) architecture based on key performance metrics: training time and accuracy.
+
+```{python comparison-table}
+compare_df = create_comparison_table()
+print(compare_df)
+```
+
+
+### Analysis
+
+**Performance Metrics:**
+
+1. **Training Time**
+    - KNN exhibits a faster training process (6.27 seconds) since it is a "lazy learning" algorithm, which delays most computation until prediction.
+    - The Neural Network, being a "eager learning" algorithm, spends more time (10.91 seconds) in training due to backpropagation, weight updates, and regularization techniques.
+
+2. **Accuracy:**
+    - The Neural Network outperforms KNN with an accuracy of **97.20%**, compared to **94.02%** for KNN.
+    - The Neural Network's higher accuracy is attributed to its ability to extract complex, non-linear patterns in the data through multiple layers and activation functions.
+    - KNN, while simpler, relies on proximity in the feature space, which may not fully capture intricate relationships.
+
+3. **Scalability:**
+    - KNN's computational cost increases significantly with larger datasets or higher-dimensional data due to the need to calculate distances for all training samples during prediction.
+    - Neural Networks scale better for larger datasets, as training is done once, and predictions are efficient after model training.
+
+
+**Per Digit Peformance Analysis:**
+
+```{python confusion-matrices}
+plot_confusion_matrices(knn_model, nn_model, X_test, y_test)
+```
+
+This detailed analysis shows that the Neural Network consistently outperforms KNN across all digits, especially for more complex digits like 8 and 9.
+
+
+### Conclusion
+
+- Neural Network (NN) clearly outperforms the K-Nearest Neighbors (KNN) model in terms of both accuracy and handling more complex patterns in the data. It also shows better scalability as the dataset grows.
+- KNN is still a useful algorithm for simpler datasets or when interpretability and speed are more important than accuracy, but Neural Networks are better suited for high-accuracy tasks, especially with larger and more complex datasets.
+
+### Key Takeaways
+
+- **KNN** is advantageous for smaller datasets and when simplicity and interpretability are priorities.
+- **Neural Networks** are ideal for larger or more complex datasets where advanced feature extraction and higher accuracy are desired.
 
 
 ----- below has not yet started ---- 
-
-
-
-Model Implementation
-
-KNN Implementation
-
-Explanation of how KNN works
-Model parameters and choices
-Training process
-
-
-Neural Network Implementation
-
-Architecture explanation
-Layer choices and activation functions
-Training process and epochs
-
-
 
 Model Comparison
 The code you provided already includes excellent comparison functionality:

@@ -13,6 +13,9 @@ ipython
 ipykernel
 nbformat
 nbclient
+pyyaml
+pandas
+
 #
 # pydantic==2.7.4
 # Cython

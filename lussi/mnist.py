@@ -13,6 +13,7 @@ import io
 import base64
 import math
 from IPython.display import HTML
+import pandas as pd
 
 
 # Constants for model file paths
@@ -508,6 +509,21 @@ def perform_timing_analysis(knn_model, nn_model, X_test, y_test):
     plt.show()
     
     return results
+
+
+def create_comparison_table():
+    # Data for the table
+    data = {
+        "Metric": ["Training Time (seconds)", "Accuracy (%)"],
+        "KNN": [6.27, 94.02],
+        "Neural Network": [10.91, 97.20]
+    }
+
+    # Create a DataFrame
+    compare_df = pd.DataFrame(data)
+
+    return compare_df
+
 
 if __name__ == "__main__":
     # Set rebuild_model=True to force retraining of models
