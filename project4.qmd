@@ -400,7 +400,7 @@ print(f"Accuracy: {nn_accuracy:.4f}")
 The neural network architecture is carefully designed to balance complexity, feature extraction, and generalization. By incorporating strategic layer design, dropout regularization, and adaptive optimization, the model achieves robust performance in MNIST digit classification.
 
 
-## Model Comparison
+# Model Comparison
 
 In this section, we compare the performance of the K-Nearest Neighbors (KNN) algorithm and the Neural Network (NN) architecture based on key performance metrics: training time and accuracy.
 
@@ -409,9 +409,7 @@ compare_df = create_comparison_table()
 print(compare_df)
 ```
 
-### Analysis
-
-**Performance Metrics:**
+## Performance Metrics
 
 1. **Training Time**
     - KNN exhibits a faster training process (6.27 seconds) since it is a "lazy learning" algorithm, which delays most computation until prediction.
@@ -426,7 +424,7 @@ print(compare_df)
     - KNN's computational cost increases significantly with larger datasets or higher-dimensional data due to the need to calculate distances for all training samples during prediction.
     - Neural Networks scale better for larger datasets, as training is done once, and predictions are efficient after model training.
 
-## Confusion Matrices
+### Confusion Matrices
 ```{python comparison_viz}
 analysis_text, knn_cm_percent, nn_cm_percent = analyze_model_accuracies(knn_model, nn_model, X_test, y_test)
 # Then create and display the visualization
@@ -436,7 +434,7 @@ comparison_viz = compare_model_accuracies_encoded(knn_model, nn_model, X_test, y
 display(HTML(comparison_viz))
 ```
 
-## Per-Class Performance Analysis
+### Per-Class Performance Analysis
 Let's analyze how each model performs for different digits:
 ```{python per_digit_analysis}
 print("\nDetailed Per-Digit Analysis:")
@@ -450,7 +448,8 @@ for i in range(10):
     print(f"Neural Network Accuracy: {nn_accuracy:.1f}%")
     print(f"Difference: {(nn_accuracy - knn_accuracy):.1f}%")
 ``` 
-## Prediction Speed Analysis
+
+### Prediction Speed Analysis
 To understand real-world performance implications, let's analyze prediction speeds for different batch sizes:
 ```{python prediction_speeds}
 batch_sizes = [1, 10, 100, 1000]
