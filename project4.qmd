@@ -127,16 +127,16 @@ This project evaluates the performance of K-Nearest Neighbors (KNN) and Neural N
 
 Performance:
 
-- The Neural Network achieved 97.1% accuracy, outperforming KNN's 94.7% accuracy
-- The Neural Network showed more consistent performance across all digits, with accuracy ranging from 95.3% to 98.9%
+- The Neural Network achieved 97.3% accuracy, outperforming KNN's 94.7% accuracy
+- The Neural Network showed more consistent performance across all digits, with accuracy ranging from 95.6% to 98.6%
 - KNN showed more variability, with accuracy ranging from 89.9% to 99.2%
 
 Computational Characteristics:
 
-- Training: KNN trained in 4.07 seconds vs. Neural Network's 16.05 seconds
+- Training: KNN trained in 6.38 seconds vs. Neural Network's 11.37 seconds
 - Prediction Speed: 
   - For small batches (1-100 images), KNN was faster
-  - For larger batches (1000 images), Neural Network was significantly faster (0.07ms vs 0.31ms per image)
+  - For larger batches (1000 images), Neural Network was significantly faster (0.06ms vs 0.69ms per image)
 
 Error Patterns:
 
@@ -192,7 +192,7 @@ display(HTML(samples_html))
 ```
 
 
-## Project Goals
+# Project Goals
 
 This project aims to:
 
@@ -202,9 +202,9 @@ This project aims to:
 * Evaluate both training time and inference speed for real-world applicability
 
 
-## Model Implementation and Training
+# Model Implementation and Training
 
-### KNN
+## KNN
 
 **K-Nearest Neighbors (KNN)** is a non-parametic algorithm, supervised machine algorithm used for both classification and regression tasks. The fundamental principle of KNN is simple: classify a new data point based on the majority vote (classification) or average (regression) of its K nearest neighbors in the feature space. 
 
@@ -216,7 +216,7 @@ knn_model, knn_accuracy = train_knn(X_train, X_test, y_train, y_test, rebuild_mo
 knn_train_time = time.time() - start_time
 ```
 
-**Training Configuration:**
+### Training Configuration
 
 - **Data Splitting:** 
     - Used *train_test_split()* function to split the data:
@@ -259,7 +259,7 @@ knn_train_time = time.time() - start_time
 
 
 
-**Performance Metrics:**
+### Performance Metrics
 ```{python knnimpl-results}
 print(f"\nKNN Results:")
 print(f"Training Time: {knn_train_time:.2f} seconds")
@@ -268,13 +268,13 @@ print(f"Accuracy: {knn_accuracy:.4f}")
 
 
 
-**Conclusion:**
+### Conclusion
 
 K-Nearest Neighbors offers a straightforward yet powerful approach to classification. By leveraging local neighborhood information and flexible distance calculations, KNN provides an interpretable method for pattern recognition in machine learning tasks.
 
 
 
-### Neural Network
+## Neural Network
 
 A **neural network** is a machine learning algorithm inspired by the structure and function of the human brain. It is designed to learn relationships, recognize patterns, and make predictions by mimicking how biological neurons process and transmit information. Neural networks excel in handling complex, non-linear data, making them a versatile tool for tasks such as image recognition, natural language processing, and classification.
 
@@ -287,7 +287,7 @@ nn_train_time = time.time() - start_time
 ```
 
 
-**Architecture Overview:**
+### Architecture Overview
 
 We created a neural network designed for MNIST digit classification. It features a multi-layer feedforward architecture with strategic layer design and regularization techniques.
 
@@ -345,7 +345,7 @@ We created a neural network designed for MNIST digit classification. It features
     
 
 
-**Training Configuration:**
+### Training Configuration
 
 - **Hyperparameters:**
 
@@ -388,14 +388,15 @@ We created a neural network designed for MNIST digit classification. It features
 
 
 
-**Performance Metrics:**
+### Performance Metrics
 ```{python nnimpl-results}
 print(f"\nNeural Network Results:")
 print(f"Training Time: {nn_train_time:.2f} seconds")
 print(f"Accuracy: {nn_accuracy:.4f}")
 ``` 
 
-**Conclusion**
+
+### Conclusion 
 
 The neural network architecture is carefully designed to balance complexity, feature extraction, and generalization. By incorporating strategic layer design, dropout regularization, and adaptive optimization, the model achieves robust performance in MNIST digit classification.
 
@@ -404,19 +405,20 @@ The neural network architecture is carefully designed to balance complexity, fea
 
 In this section, we compare the performance of the K-Nearest Neighbors (KNN) algorithm and the Neural Network (NN) architecture based on key performance metrics: training time and accuracy.
 
+## Performance Metrics
+
 ```{python comparison-table}
-compare_df = create_comparison_table()
+compare_df = create_comparison_table(knn_accuracy, knn_train_time, nn_accuracy, nn_train_time)
 print(compare_df)
 ```
 
-## Performance Metrics
 
 1. **Training Time**
-    - KNN exhibits a faster training process (6.27 seconds) since it is a "lazy learning" algorithm, which delays most computation until prediction.
-    - The Neural Network, being a "eager learning" algorithm, spends more time (10.91 seconds) in training due to backpropagation, weight updates, and regularization techniques.
+    - KNN exhibits a faster training process 6.38 seconds) since it is a "lazy learning" algorithm, which delays most computation until prediction.
+    - The Neural Network, being a "eager learning" algorithm, spends more time (13.84 seconds) in training due to backpropagation, weight updates, and regularization techniques.
 
 2. **Accuracy:**
-    - The Neural Network outperforms KNN with an accuracy of **97.20%**, compared to **94.02%** for KNN.
+    - The Neural Network outperforms KNN with an accuracy of **97.3%**, compared to **94.7%** for KNN.
     - The Neural Network's higher accuracy is attributed to its ability to extract complex, non-linear patterns in the data through multiple layers and activation functions.
     - KNN, while simpler, relies on proximity in the feature space, which may not fully capture intricate relationships.
 
@@ -424,32 +426,35 @@ print(compare_df)
     - KNN's computational cost increases significantly with larger datasets or higher-dimensional data due to the need to calculate distances for all training samples during prediction.
     - Neural Networks scale better for larger datasets, as training is done once, and predictions are efficient after model training.
 
-### Confusion Matrices
+## Model Accuracy by Digit
+
 ```{python comparison_viz}
 analysis_text, knn_cm_percent, nn_cm_percent = analyze_model_accuracies(knn_model, nn_model, X_test, y_test)
+
 # Then create and display the visualization
 comparison_viz = compare_model_accuracies_encoded(knn_model, nn_model, X_test, y_test)
+
 # Display both
 # print(analysis_text)
 display(HTML(comparison_viz))
 ```
 
-### Per-Class Performance Analysis
+## Per-Class Performance Analysis
 Let's analyze how each model performs for different digits:
 ```{python per_digit_analysis}
 print("\nDetailed Per-Digit Analysis:")
 print("-" * 50)
 for i in range(10):
-    knn_accuracy = knn_cm_percent[i,i]
-    nn_accuracy = nn_cm_percent[i,i]
+    knn_accuracy_per_class = knn_cm_percent[i,i]
+    nn_accuracy_per_class = nn_cm_percent[i,i]
     
     print(f"\nDigit {i}:")
-    print(f"KNN Accuracy: {knn_accuracy:.1f}%")
-    print(f"Neural Network Accuracy: {nn_accuracy:.1f}%")
-    print(f"Difference: {(nn_accuracy - knn_accuracy):.1f}%")
+    print(f"KNN Accuracy: {knn_accuracy_per_class:.1f}%")
+    print(f"Neural Network Accuracy: {nn_accuracy_per_class:.1f}%")
+    print(f"Difference: {(nn_accuracy_per_class - knn_accuracy_per_class):.1f}%")
 ``` 
 
-### Prediction Speed Analysis
+## Prediction Speed Analysis
 To understand real-world performance implications, let's analyze prediction speeds for different batch sizes:
 ```{python prediction_speeds}
 batch_sizes = [1, 10, 100, 1000]
@@ -479,14 +484,15 @@ for batch_size in batch_sizes:
     print(f"Time per image - NN: {(nn_time/batch_size)*1000:.2f}ms")
 ```
 
+
 # Key Findings and Business Impact
 
 ## Overall Accuracy
 ```{python overall_accuracy}
 #| echo: false
-print(f"Neural Network: {nn_accuracy:.4f} (97.1%)")
+print(f"Neural Network: {nn_accuracy:.4f} (97.3%)")
 print(f"KNN: {knn_accuracy:.4f} (94.7%)")
-print(f"The Neural Network provides a {97.1 - 94.7:.1f} percentage point higher accuracy.")
+print(f"The Neural Network provides a {97.3 - 94.7:.1f} percentage point higher accuracy.")
 ```
 ## Training Performance
 ```{python training_performance}
@@ -524,32 +530,12 @@ Neural Network has fixed memory footprint after training
 Neural Network offers better scalability for production systems
 
 
-### Conclusion
+# Conclusion
 
 - Neural Network (NN) clearly outperforms the K-Nearest Neighbors (KNN) model in terms of both accuracy and handling more complex patterns in the data. It also shows better scalability as the dataset grows.
 - KNN is still a useful algorithm for simpler datasets or when interpretability and speed are more important than accuracy, but Neural Networks are better suited for high-accuracy tasks, especially with larger and more complex datasets.
 
-### Key Takeaways
+## Key Takeaways
 
 - **KNN** is advantageous for smaller datasets and when simplicity and interpretability are priorities.
 - **Neural Networks** are ideal for larger or more complex datasets where advanced feature extraction and higher accuracy are desired.
-
-
------ below has not yet started ---- 
-
-Model Comparison
-The code you provided already includes excellent comparison functionality:
-
-Accuracy metrics
-Confusion matrices
-Per-digit performance analysis
-Training time comparison
-Inference time comparison
-
-Custom Prediction Testing
-
-Section for testing with your own handwritten digits
-Process for loading and preprocessing custom images
-Comparison of how both models perform on your custom input
-
-Would you like me to elaborate on any of these sections or help you implement specific parts of the outline? I can also help you create the actual Quarto markdown structure with code chunks if you'd like.

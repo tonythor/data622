@@ -388,12 +388,12 @@ def encode_plt_image():
     return f'<img src="data:image/png;base64,{img_base64}" alt="MNIST Visualization" />'
 
 
-def create_comparison_table():
+def create_comparison_table(knn_accuracy, knn_train_time, nn_accuracy, nn_train_time):
     # Data for the table
     data = {
         "Metric": ["Training Time (seconds)", "Accuracy (%)"],
-        "KNN": [6.27, 94.02],
-        "Neural Network": [10.91, 97.20]
+        "KNN": [knn_train_time, knn_accuracy],
+        "Neural Network": [nn_train_time, nn_accuracy]
     }
 
     # Create a DataFrame
