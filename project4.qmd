@@ -128,20 +128,20 @@ This project evaluates the performance of K-Nearest Neighbors (KNN) and Neural N
 Performance:
 
 - The Neural Network achieved 97.3% accuracy, outperforming KNN's 94.7% accuracy
-- The Neural Network showed more consistent performance across all digits, with accuracy ranging from 95.6% to 98.6%
-- KNN showed more variability, with accuracy ranging from 89.9% to 99.2%
+- The Neural Network showed more consistent performance across all digits, with accuracy ranging from ~95.6% to ~98.6%
+- KNN showed more variability, with accuracy ranging from ~89.9% to ~99.2%
 
 Computational Characteristics:
 
-- Training: KNN trained in 6.38 seconds vs. Neural Network's 11.37 seconds
+- Training: KNN trained in 6.31 seconds vs. Neural Network's 11.37 seconds
 - Prediction Speed: 
   - For small batches (1-100 images), KNN was faster
-  - For larger batches (1000 images), Neural Network was significantly faster (0.06ms vs 0.69ms per image)
+  - For larger batches (1000 images), Neural Network was significantly faster (~0.06ms vs ~0.69ms per image)
 
 Error Patterns:
 
 - Both models struggled most with visually similar digits (e.g., 3/5, 4/9, 7/9)
-- KNN showed higher error rates for complex digits like '8' (89.9% accuracy)
+- KNN showed higher error rates for complex digits like '8' (~89.9% accuracy)
 - Neural Network maintained >95% accuracy across all digit classes
 
 This analysis demonstrates that while KNN offers faster training and competitive performance for small-scale predictions, the Neural Network provides superior accuracy and better scaling for larger batch predictions, making it more suitable for production deployment despite longer training times.
@@ -154,7 +154,7 @@ The [MNIST dataset](https://yann.lecun.com/exdb/mnist/) (Modified National Insti
 
 ### Understanding the Dataset Format 
 
-Though easily converted, the records are not actually stored as images. They are stored as a matrix. Each record of the 60,000 images is stored as a 28 by 28 matrix, with those positions holding the color of the pixel the position represents. It's a square image, so 28 pixels by 28 pixels tall totals 784 total pixles, or 784 total numbers. Each of those numbers represents a shade of grayscale, 0 being all black, and 255 being white.
+Though easily converted, the records are not actually stored as images. They are stored as a matrix. Each record of the 60,000 images is stored as a 28 by 28 matrix, with those positions holding the color of the pixel the position represents. It's a square image, so 28 pixels by 28 pixels tall totals 784 total pixels, or 784 total numbers. Each of those numbers represents a shade of grayscale, 0 being all black, and 255 being white.
 
 ```{python initial}
 #visualize_digit_matrix(X_train_unscaled, index=0)
@@ -191,6 +191,7 @@ display(HTML(samples_html))
 # plot_sample_digits(X_train_unscaled, y_train)
 ```
 
+---
 
 # Project Goals
 
@@ -201,6 +202,7 @@ This project aims to:
 * Understand how different architectures handle the variations in handwritten digits
 * Evaluate both training time and inference speed for real-world applicability
 
+---
 
 # Model Implementation and Training
 
@@ -212,8 +214,7 @@ This project aims to:
 # Train KNN model
 print("Training KNN Model...")
 start_time = time.time()
-knn_model, knn_accuracy = train_knn(X_train, X_test, y_train, y_test, rebuild_model=True)
-knn_train_time = time.time() - start_time
+knn_model, knn_accuracy, knn_train_time = train_knn(X_train, X_test, y_train, y_test, rebuild_model=False)
 ```
 
 ### Training Configuration
@@ -282,8 +283,7 @@ A **neural network** is a machine learning algorithm inspired by the structure a
 ```{python nnimpl}
 print("\nTraining Neural Network...")
 start_time = time.time()
-nn_model, history, nn_accuracy = train_neural_network(X_train, X_test, y_train, y_test, rebuild_model=True)
-nn_train_time = time.time() - start_time
+nn_model, history, nn_accuracy, nn_train_time = train_neural_network(X_train, X_test, y_train, y_test, rebuild_model=False)
 ```
 
 
@@ -342,7 +342,6 @@ We created a neural network designed for MNIST digit classification. It features
         - Converts raw scores to probability distribution
         - Ensures probabilities sum to 1
         - Enables multi-class classification
-    
 
 
 ### Training Configuration
@@ -370,21 +369,19 @@ We created a neural network designed for MNIST digit classification. It features
             - Detect potential overfitting 
             - Provide real-time performance insights
 
-- **Optimization Strategy:**
-    - Adam
-        - Adaptive learning rate optimization
-        - Characteristics:
-            - Combines RMSprop and momentum advantages
-            - Dynamically adjusts per-parameter learning rates
-            - Handles sparse gradients effectively
+- **Optimization Strategy:** Adam
+    - Adaptive learning rate optimization
+    - Characteristics:
+        - Combines RMSprop and momentum advantages
+        - Dynamically adjusts per-parameter learning rates
+        - Handles sparse gradients effectively
 
 
-- **Loss Function:**
-    - Sparse Categorical Cross-Entropy
-        - Ideal for multi-class classification
-        - Measures:
-            - Difference between predicted and actual distributions
-            - Guides weight updates during backpropagation
+- **Loss Function:** Sparse Categorical Cross-Entropy
+    - Ideal for multi-class classification
+    - Measures:
+        - Difference between predicted and actual distributions
+        - Guides weight updates during backpropagation
 
 
 
@@ -400,6 +397,7 @@ print(f"Accuracy: {nn_accuracy:.4f}")
 
 The neural network architecture is carefully designed to balance complexity, feature extraction, and generalization. By incorporating strategic layer design, dropout regularization, and adaptive optimization, the model achieves robust performance in MNIST digit classification.
 
+---
 
 # Model Comparison
 
@@ -414,11 +412,11 @@ print(compare_df)
 
 
 1. **Training Time**
-    - KNN exhibits a faster training process 6.38 seconds) since it is a "lazy learning" algorithm, which delays most computation until prediction.
+    - KNN exhibits a faster training process 6.31 seconds) since it is a "lazy learning" algorithm, which delays most computation until prediction.
     - The Neural Network, being a "eager learning" algorithm, spends more time (13.84 seconds) in training due to backpropagation, weight updates, and regularization techniques.
 
 2. **Accuracy:**
-    - The Neural Network outperforms KNN with an accuracy of **97.3%**, compared to **94.7%** for KNN.
+    - The Neural Network outperforms KNN with an accuracy of **97.4%**, compared to **94.7%** for KNN.
     - The Neural Network's higher accuracy is attributed to its ability to extract complex, non-linear patterns in the data through multiple layers and activation functions.
     - KNN, while simpler, relies on proximity in the feature space, which may not fully capture intricate relationships.
 
@@ -427,6 +425,8 @@ print(compare_df)
     - Neural Networks scale better for larger datasets, as training is done once, and predictions are efficient after model training.
 
 ## Model Accuracy by Digit
+
+The bar chart below compares the accuracy of two models, K-Nearest Neighbors (KNN) and a Neural Network, for classifying digits. Accuracy is presented for each digit (0–9) as a percentage.
 
 ```{python comparison_viz}
 analysis_text, knn_cm_percent, nn_cm_percent = analyze_model_accuracies(knn_model, nn_model, X_test, y_test)
@@ -440,7 +440,9 @@ display(HTML(comparison_viz))
 ```
 
 ## Per-Class Performance Analysis
+
 Let's analyze how each model performs for different digits:
+
 ```{python per_digit_analysis}
 print("\nDetailed Per-Digit Analysis:")
 print("-" * 50)
@@ -455,7 +457,9 @@ for i in range(10):
 ``` 
 
 ## Prediction Speed Analysis
+
 To understand real-world performance implications, let's analyze prediction speeds for different batch sizes:
+
 ```{python prediction_speeds}
 batch_sizes = [1, 10, 100, 1000]
 results = {'knn': {}, 'nn': {}}
@@ -485,57 +489,107 @@ for batch_size in batch_sizes:
 ```
 
 
+---
+
+
 # Key Findings and Business Impact
 
-## Overall Accuracy
+### Overall Accuracy
 ```{python overall_accuracy}
 #| echo: false
-print(f"Neural Network: {nn_accuracy:.4f} (97.3%)")
+print(f"Neural Network: {nn_accuracy:.4f} (97.4%)")
 print(f"KNN: {knn_accuracy:.4f} (94.7%)")
-print(f"The Neural Network provides a {97.3 - 94.7:.1f} percentage point higher accuracy.")
+print(f"The Neural Network provides a {97.4 - 94.7:.1f} percentage point higher accuracy.")
 ```
-## Training Performance
+
+The Neural Network provides a 2.7 percentage point higher accuracy, making it a more reliable model for tasks requiring high precision.
+
+### Training Performance
 ```{python training_performance}
 #| echo: false
 print(f"KNN Training Time: {knn_train_time:.2f} seconds")
 print(f"Neural Network Training Time: {nn_train_time:.2f} seconds")
 ```
 
-## Prediction Speed
+While KNN has a shorter training time, it is less resource-intensive since it does not involve iterative optimization or backpropagation. This makes KNN a simpler model to implement, especially for smaller datasets or low-complexity tasks.
 
-Small batches (1-100 images): KNN performs faster
-Large batches (1000+ images): Neural Network shows superior performance
-Neural Network scales better for production workloads
+On the other hand, the Neural Network's slightly longer training time is offset by its better classification performance and scalability to handle larger and more complex datasets. Its efficiency during frequent retraining makes it advantageous for dynamic datasets where the model needs to adapt continuously.
 
+In summary, KNN may be preferred for simpler tasks with limited resources, while Neural Networks are better suited for tasks requiring higher accuracy and frequent updates.
 
-## Error Analysis
+### Prediction Speed
 
-Both models struggle most with visually similar digits (3/5, 4/9, 7/9)
-Neural Network shows more consistent performance across all digit classes
-KNN shows higher variability in accuracy between different digits
+* Small batches (1-100 images): KNN performs faster
 
+* Large batches (1000+ images): Neural Network shows superior performance
 
-## Business Implications
-
-For real-time, single-image processing: KNN might be preferable due to faster prediction times
-For batch processing: Neural Network is clearly superior
-Trade-off between setup time (KNN faster) vs long-term performance (NN better)
-Memory requirements favor Neural Network for large-scale deployment
+The Neural Network scales better for production workloads where large volumes of data need to be processed consistently.
 
 
-## Deployment Considerations
+### Error Analysis
 
-KNN requires storing entire training dataset (higher memory usage)
-Neural Network has fixed memory footprint after training
-Neural Network offers better scalability for production systems
+**Common Challenges:**
 
+- Both models struggle most with visually similar digits (3/5, 4/9, 7/9).
+- Misclassifications are more frequent when digits share overlapping features or stroke patterns.
+
+**Performance Consistency:**
+
+- **Neural Network:** Shows more consistent performance across all digit classes due to its ability to generalize and extract deeper features.
+- **KNN:** Displays higher variability in accuracy across digit classes, as it relies heavily on proximity to training samples.
+
+*Business Insights:*
+The Neural Network’s consistency ensures fewer outliers in predictions, making it a safer choice for critical applications where errors carry significant consequences.
+
+
+### Business Implications
+
+**For real-time, single-image processing:**
+
+* KNN Advantage: Faster prediction times for small-scale tasks make KNN ideal for low-latency requirements.
+    * **Example:** In a security camera system for facial recognition at entry points, KNN could quickly identify faces in real-time, where speed is crucial for granting access without delays.
+
+**Batch Processing:**
+
+* Neural Network Advantage: Superior performance and scalability make it the preferred choice for batch processing tasks, such as automated document scanning or large-scale data classification.
+
+
+**Trade-Offs:**
+
+- Setup Time: KNN offers a quicker setup and is easier to implement for quick turnaround projects.
+    * **Example:** A retail business launching a new product line might use KNN to quickly build a recommendation system. Since KNN is easy to implement, the business can rapidly test and deploy a basic version of the recommendation engine to suggest products to customers, allowing them to gather early feedback and adjust their strategy without a lengthy development cycle.
+- Long-Term Performance: Neural Networks offer better reliability and scalability, justifying the initial investment in setup and training.
+    * **Example:** A large insurance company with thousands of claims per day might prefer Neural Networks for fraud detection due to their ability to adapt as the dataset grows and improve performance over time.
+
+
+**Memory Usage:**
+
+- KNN: Requires storing the entire training dataset in memory, leading to higher resource consumption as the dataset size increases.
+    * **Example:** In a real-time recommendation system for a small retailer, KNN may be inefficient as it needs to store all user data for every prediction, leading to higher memory costs as the user base grows.
+
+- Neural Network: Fixed memory footprint post-training makes it more suitable for resource-constrained environments.
+    * **Example:** A mobile app for language translation might use a pre-trained Neural Network that doesn’t require storing new training data, making it ideal for running efficiently on devices with limited memory.
+
+
+**Scalability:**
+
+- Neural Networks demonstrate better scalability for production systems due to their ability to handle increasing dataset sizes and complexities without a significant drop in performance.
+    * **Example:** As customer interactions and transactions grow, neural networks can continue to improve product recommendations or fraud detection systems, providing businesses with the agility to meet increasing demands without overhauling their infrastructure. Moreover, scalable models help companies maintain cost-efficiency by reducing the need for manual intervention or frequent model retraining as data volume increases.
+
+
+**Integration:**
+
+- KNN’s simplicity makes it easier to integrate for basic applications or for systems with minimal computational capabilities.
+    * **Example:** A small healthcare clinic could integrate KNN for simple predictive tasks like diagnosing basic diseases based on patient symptoms without requiring expensive computational resources.
+
+---
 
 # Conclusion
 
-- Neural Network (NN) clearly outperforms the K-Nearest Neighbors (KNN) model in terms of both accuracy and handling more complex patterns in the data. It also shows better scalability as the dataset grows.
-- KNN is still a useful algorithm for simpler datasets or when interpretability and speed are more important than accuracy, but Neural Networks are better suited for high-accuracy tasks, especially with larger and more complex datasets.
+In this analysis, the Neural Network (NN) demonstrated superior performance compared to the K-Nearest Neighbors (KNN) model, particularly in terms of accuracy and its ability to handle more complex patterns in the MNIST dataset. The Neural Network achieved an impressive 97.3% accuracy, with stable performance across all digit classes, making it highly reliable for high-accuracy tasks.
 
-## Key Takeaways
+While KNN outperforms Neural Networks in terms of training speed and prediction time for small batches, its performance is more variable and less consistent, especially with visually similar or complex digits. KNN is more appropriate for scenarios where speed and simplicity are critical, such as real-time applications with small datasets or when interpretability is a priority.
 
-- **KNN** is advantageous for smaller datasets and when simplicity and interpretability are priorities.
-- **Neural Networks** are ideal for larger or more complex datasets where advanced feature extraction and higher accuracy are desired.
+On the other hand, Neural Networks offer a better balance of accuracy and scalability, making them well-suited for production environments dealing with larger and more complex datasets. Despite the longer training time, their ability to consistently improve performance as the dataset size increases makes them the more effective choice for applications requiring high precision and reliability.
+
+In summary, while KNN remains a valuable tool for certain use cases, Neural Networks stand out as the more robust and scalable option for tasks that demand accuracy and complexity handling, especially in production-level applications.

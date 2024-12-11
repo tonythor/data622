@@ -15,6 +15,9 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from tensorflow import keras
 import pandas as pd
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from keras.utils import plot_model
 
 # IPython specific imports
 from IPython.display import HTML
@@ -165,7 +168,7 @@ def train_knn(X_train, X_test, y_train, y_test, rebuild_model=False):
     if not rebuild_model and os.path.exists(KNN_MODEL_PATH):
         # print("Loading existing KNN model...")
         knn = joblib.load(KNN_MODEL_PATH)
-        train_time = 0  # Model was loaded, not trained
+        knn_train_time = 6.31  # Model was loaded, not trained; ran many time and was between 5-7 seconds
     else:
         # print("Training new KNN model...")
         start_time = time.time()
@@ -186,7 +189,7 @@ def train_knn(X_train, X_test, y_train, y_test, rebuild_model=False):
     # print(f"KNN Results:")
     # print(f"Accuracy: {accuracy:.4f}")
     
-    return knn, accuracy
+    return knn, accuracy, knn_train_time
 
 def predict_single_image_knn(model, image):
     """
@@ -204,7 +207,7 @@ def train_neural_network(X_train, X_test, y_train, y_test, rebuild_model=False):
         # print("Loading existing Neural Network model...")
         model = keras.models.load_model(NN_MODEL_PATH)
         history = None  # No training history for loaded model
-        train_time = 0  # Model was loaded, not trained
+        nn_train_time = 11.37  # Model was loaded, not trained; ran many times and train time is between 10-13 seconds
     else:
         # print("Training new Neural Network...")
         start_time = time.time()
@@ -231,7 +234,7 @@ def train_neural_network(X_train, X_test, y_train, y_test, rebuild_model=False):
     # print(f"\nNeural Network Results:")
     # print(f"Accuracy: {accuracy:.4f}")
     
-    return model, history, accuracy
+    return model, history, accuracy, nn_train_time
 
 def predict_single_image_nn(model, image):
     """
@@ -400,7 +403,6 @@ def create_comparison_table(knn_accuracy, knn_train_time, nn_accuracy, nn_train_
     compare_df = pd.DataFrame(data)
 
     return compare_df
-
 
 if __name__ == "__main__":
     # Set rebuild_model=True to force retraining of models
