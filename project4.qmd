@@ -1,4 +1,3 @@
-
 ---
 title: "Project 4: MNIST using KNN and Neural Networks"
 author: "Team: I Love Lucy"
@@ -53,26 +52,26 @@ body {
 }
 
 .header-container .meta-info {
-    text-align: right; /* Align the meta information (author, date) to the right */
+    text-align: right; /* Align the meta information to the right */
     font-size: 1.2em;
     margin: 0;
 }
 
 h2, h3, h4, h5, h6 {
     font-family: Arial, sans-serif;
-    margin: 0 0 10px 0; /* Reduce the bottom margin for more compact headers */
+    margin: 0 0 10px 0; /* Reduce the bottom margin */
     padding: 0; /* Remove padding */
     line-height: 1.2; /* Control the line spacing */
 }
 
 /* Adjust table and image styles */
 table {
-    width: 100%; /* Make table full width within the 900px body */
+    width: 100%;
     border-collapse: collapse;
     max-width: 100%;
-    margin-left: auto;  /* Center the table */
-    margin-right: auto; /* Center the table */
-    overflow-x: auto; /* Allow horizontal scrolling if the table is too wide */
+    margin-left: auto;
+    margin-right: auto;
+    overflow-x: auto;
     display: block;
 }
 
@@ -88,20 +87,19 @@ th {
 
 /* Custom figure sizing */
 .figure {
-    width: 100%; /* Ensure figures take full width within the 900px body */
-    margin-left: auto;  /* Center figure */
-    margin-right: auto; /* Center figure */
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 img {
-    max-width: 100%;  /* Ensure images take full width within the 900px body */
+    max-width: 100%;
     height: auto;
     display: block;
-    margin-left: auto;  /* Center image */
-    margin-right: auto; /* Center image */
+    margin-left: auto;
+    margin-right: auto;
 }
 </style>
-<!-- build with:  ./build.sh -p 4 -h -->
 
 <p style="text-align: center;">
   Project 4 Github: [<a href="https://github.com/tonythor/data622/project4.qmd" target="_blank">Quarto Presentation</a>] &nbsp; 
@@ -111,12 +109,11 @@ img {
   [<a href="https://rpubs.com/tonythor/data622-project3" target="_blank" >3</a>] &nbsp; 
   [<a href="https://rpubs.com/tonythor/data622-project2" target="_blank" >2</a>] &nbsp; 
   [<a href="https://rpubs.com/tonythor/data622-project1" target="_blank" >1</a>] &nbsp; 
-  
 </p>
 
 ```{python initial}
 from IPython.display import display, HTML
-from lussi.mnist import *
+from lussi.mnist2 import *
 
 X_train, X_test, y_train, y_test, X_train_unscaled = load_data() 
 ```
@@ -156,42 +153,38 @@ The [MNIST dataset](https://yann.lecun.com/exdb/mnist/) (Modified National Insti
 
 Though easily converted, the records are not actually stored as images. They are stored as a matrix. Each record of the 60,000 images is stored as a 28 by 28 matrix, with those positions holding the color of the pixel the position represents. It's a square image, so 28 pixels by 28 pixels tall totals 784 total pixels, or 784 total numbers. Each of those numbers represents a shade of grayscale, 0 being all black, and 255 being white.
 
-```{python initial}
+```{python matrix_viz}
 #visualize_digit_matrix(X_train_unscaled, index=0)
 matrix_html = visualize_digit_matrix_encoded(X_train_unscaled, index=0)
 display(HTML(matrix_html))
-
 ```
 
 Wrapping around each of those records, it's like any other machine learning dataset, test and train, and each of those two are broken apart into data and label, like so: 
 
 **Training Set:**
 
-- Images: X_train →  60000  images, each of size  28 \times 28 
-- Labels: y_train →  60000  labels, e.g., [5, 0, 4, 1, 9, ...]
+- Images: X_train → 60000 images, each of size 28 × 28 
+- Labels: y_train → 60000 labels, e.g., [5, 0, 4, 1, 9, ...]
 
 **Testing Set:**
 
-- Images: X_test →  10000  images, each of size  28 \times 28 
-- Labels: y_test →  10000  labels, e.g., [7, 2, 1, 0, 4, ...]
-
+- Images: X_test → 10000 images, each of size 28 × 28 
+- Labels: y_test → 10000 labels, e.g., [7, 2, 1, 0, 4, ...]
 
 ### Looking at Sample records
 
 It's easy to understand the core challenge by looking at records. There is much variation in hand written letters, with all sorts of factors presenting like: 
 
-* Writing styles and penmanship
-* Stroke thickness and continuity
-* Digit orientation and slant
-* Image noise and quality
+- Writing styles and penmanship
+- Stroke thickness and continuity
+- Digit orientation and slant
+- Image noise and quality
 
 ```{python sample_digits}
 samples_html = plot_sample_digits_encoded(X_train_unscaled, y_train)
 display(HTML(samples_html))
 # plot_sample_digits(X_train_unscaled, y_train)
 ```
-
----
 
 # Project Goals
 
@@ -202,19 +195,17 @@ This project aims to:
 * Understand how different architectures handle the variations in handwritten digits
 * Evaluate both training time and inference speed for real-world applicability
 
----
-
 # Model Implementation and Training
 
 ## KNN
 
-**K-Nearest Neighbors (KNN)** is a non-parametic algorithm, supervised machine algorithm used for both classification and regression tasks. The fundamental principle of KNN is simple: classify a new data point based on the majority vote (classification) or average (regression) of its K nearest neighbors in the feature space. 
+K-Nearest Neighbors (KNN) is a non-parametic algorithm, supervised machine algorithm used for both classification and regression tasks. The fundamental principle of KNN is simple: classify a new data point based on the majority vote (classification) or average (regression) of its K nearest neighbors in the feature space.
 
 ```{python knnimpl}
 # Train KNN model
 print("Training KNN Model...")
 start_time = time.time()
-knn_model, knn_accuracy, knn_train_time = train_knn(X_train, X_test, y_train, y_test, rebuild_model=False)
+knn_model, knn_accuracy, knn_train_time = train_knn(X_train, X_test, y_train, y_test, rebuild_model=True)
 ```
 
 ### Training Configuration
@@ -229,8 +220,6 @@ knn_model, knn_accuracy, knn_train_time = train_knn(X_train, X_test, y_train, y_
 - **Lazy Learning:**
     - KNN stores the entire training dataset and only makes predictions during inference
 
-
-
 **Prediction Process Mechanics:**
 
 1. **Distance Calculation**
@@ -244,8 +233,6 @@ knn_model, knn_accuracy, knn_train_time = train_knn(X_train, X_test, y_train, y_
     - Majority voting determines the class
     - Most frequent class among K neighbors wins
 
-
-
 **Key Parameters:**
 
 - **Number of Neighbors: n_neighbors = 3**
@@ -258,8 +245,6 @@ knn_model, knn_accuracy, knn_train_time = train_knn(X_train, X_test, y_train, y_
     * Default is Uniform, where all neighbors contribute equally.
     * Weighted options give more influence to closer neighbors.
 
-
-
 ### Performance Metrics
 ```{python knnimpl-results}
 print(f"\nKNN Results:")
@@ -267,18 +252,13 @@ print(f"Training Time: {knn_train_time:.2f} seconds")
 print(f"Accuracy: {knn_accuracy:.4f}")
 ```
 
-
-
 ### Conclusion
 
 K-Nearest Neighbors offers a straightforward yet powerful approach to classification. By leveraging local neighborhood information and flexible distance calculations, KNN provides an interpretable method for pattern recognition in machine learning tasks.
 
-
-
 ## Neural Network
 
-A **neural network** is a machine learning algorithm inspired by the structure and function of the human brain. It is designed to learn relationships, recognize patterns, and make predictions by mimicking how biological neurons process and transmit information. Neural networks excel in handling complex, non-linear data, making them a versatile tool for tasks such as image recognition, natural language processing, and classification.
-
+A neural network is a machine learning algorithm inspired by the structure and function of the human brain. It is designed to learn relationships, recognize patterns, and make predictions by mimicking how biological neurons process and transmit information. Neural networks excel in handling complex, non-linear data, making them a versatile tool for tasks such as image recognition, natural language processing, and classification.
 
 ```{python nnimpl}
 print("\nTraining Neural Network...")
@@ -286,11 +266,9 @@ start_time = time.time()
 nn_model, history, nn_accuracy, nn_train_time = train_neural_network(X_train, X_test, y_train, y_test, rebuild_model=False)
 ```
 
-
 ### Architecture Overview
 
 We created a neural network designed for MNIST digit classification. It features a multi-layer feedforward architecture with strategic layer design and regularization techniques.
-
 
 **Detailed Layer Analysis:**
 
@@ -343,7 +321,6 @@ We created a neural network designed for MNIST digit classification. It features
         - Ensures probabilities sum to 1
         - Enables multi-class classification
 
-
 ### Training Configuration
 
 - **Hyperparameters:**
@@ -376,14 +353,11 @@ We created a neural network designed for MNIST digit classification. It features
         - Dynamically adjusts per-parameter learning rates
         - Handles sparse gradients effectively
 
-
 - **Loss Function:** Sparse Categorical Cross-Entropy
     - Ideal for multi-class classification
     - Measures:
         - Difference between predicted and actual distributions
         - Guides weight updates during backpropagation
-
-
 
 ### Performance Metrics
 ```{python nnimpl-results}
@@ -392,12 +366,9 @@ print(f"Training Time: {nn_train_time:.2f} seconds")
 print(f"Accuracy: {nn_accuracy:.4f}")
 ``` 
 
-
 ### Conclusion 
 
 The neural network architecture is carefully designed to balance complexity, feature extraction, and generalization. By incorporating strategic layer design, dropout regularization, and adaptive optimization, the model achieves robust performance in MNIST digit classification.
-
----
 
 # Model Comparison
 
@@ -410,9 +381,8 @@ compare_df = create_comparison_table(knn_accuracy, knn_train_time, nn_accuracy, 
 print(compare_df)
 ```
 
-
 1. **Training Time**
-    - KNN exhibits a faster training process 6.31 seconds) since it is a "lazy learning" algorithm, which delays most computation until prediction.
+    - KNN exhibits a faster training process (6.31 seconds) since it is a "lazy learning" algorithm, which delays most computation until prediction.
     - The Neural Network, being a "eager learning" algorithm, spends more time (13.84 seconds) in training due to backpropagation, weight updates, and regularization techniques.
 
 2. **Accuracy:**
@@ -488,13 +458,9 @@ for batch_size in batch_sizes:
     print(f"Time per image - NN: {(nn_time/batch_size)*1000:.2f}ms")
 ```
 
-
----
-
-
 # Key Findings and Business Impact
 
-### Overall Accuracy
+## Overall Accuracy
 ```{python overall_accuracy}
 #| echo: false
 print(f"Neural Network: {nn_accuracy:.4f} (97.4%)")
@@ -504,7 +470,7 @@ print(f"The Neural Network provides a {97.4 - 94.7:.1f} percentage point higher 
 
 The Neural Network provides a 2.7 percentage point higher accuracy, making it a more reliable model for tasks requiring high precision.
 
-### Training Performance
+## Training Performance
 ```{python training_performance}
 #| echo: false
 print(f"KNN Training Time: {knn_train_time:.2f} seconds")
@@ -517,32 +483,25 @@ On the other hand, the Neural Network's slightly longer training time is offset 
 
 In summary, KNN may be preferred for simpler tasks with limited resources, while Neural Networks are better suited for tasks requiring higher accuracy and frequent updates.
 
-### Prediction Speed
+## Prediction Speed
 
 * Small batches (1-100 images): KNN performs faster
-
 * Large batches (1000+ images): Neural Network shows superior performance
+* The Neural Network scales better for production workloads where large volumes of data need to be processed consistently.
 
-The Neural Network scales better for production workloads where large volumes of data need to be processed consistently.
-
-
-### Error Analysis
+## Error Analysis
 
 **Common Challenges:**
-
-- Both models struggle most with visually similar digits (3/5, 4/9, 7/9).
-- Misclassifications are more frequent when digits share overlapping features or stroke patterns.
+- Both models struggle most with visually similar digits (3/5, 4/9, 7/9)
+- Misclassifications are more frequent when digits share overlapping features or stroke patterns
 
 **Performance Consistency:**
+- Neural Network: Shows more consistent performance across all digit classes due to its ability to generalize and extract deeper features
+- KNN: Displays higher variability in accuracy across digit classes, as it relies heavily on proximity to training samples
 
-- **Neural Network:** Shows more consistent performance across all digit classes due to its ability to generalize and extract deeper features.
-- **KNN:** Displays higher variability in accuracy across digit classes, as it relies heavily on proximity to training samples.
+*Business Insights:* The Neural Network's consistency ensures fewer outliers in predictions, making it a safer choice for critical applications where errors carry significant consequences.
 
-*Business Insights:*
-The Neural Network’s consistency ensures fewer outliers in predictions, making it a safer choice for critical applications where errors carry significant consequences.
-
-
-### Business Implications
+## Business Implications
 
 **For real-time, single-image processing:**
 
@@ -553,7 +512,6 @@ The Neural Network’s consistency ensures fewer outliers in predictions, making
 
 * Neural Network Advantage: Superior performance and scalability make it the preferred choice for batch processing tasks, such as automated document scanning or large-scale data classification.
 
-
 **Trade-Offs:**
 
 - Setup Time: KNN offers a quicker setup and is easier to implement for quick turnaround projects.
@@ -561,28 +519,22 @@ The Neural Network’s consistency ensures fewer outliers in predictions, making
 - Long-Term Performance: Neural Networks offer better reliability and scalability, justifying the initial investment in setup and training.
     * **Example:** A large insurance company with thousands of claims per day might prefer Neural Networks for fraud detection due to their ability to adapt as the dataset grows and improve performance over time.
 
-
 **Memory Usage:**
 
 - KNN: Requires storing the entire training dataset in memory, leading to higher resource consumption as the dataset size increases.
     * **Example:** In a real-time recommendation system for a small retailer, KNN may be inefficient as it needs to store all user data for every prediction, leading to higher memory costs as the user base grows.
-
 - Neural Network: Fixed memory footprint post-training makes it more suitable for resource-constrained environments.
-    * **Example:** A mobile app for language translation might use a pre-trained Neural Network that doesn’t require storing new training data, making it ideal for running efficiently on devices with limited memory.
-
+    * **Example:** A mobile app for language translation might use a pre-trained Neural Network that doesn't require storing new training data, making it ideal for running efficiently on devices with limited memory.
 
 **Scalability:**
 
 - Neural Networks demonstrate better scalability for production systems due to their ability to handle increasing dataset sizes and complexities without a significant drop in performance.
     * **Example:** As customer interactions and transactions grow, neural networks can continue to improve product recommendations or fraud detection systems, providing businesses with the agility to meet increasing demands without overhauling their infrastructure. Moreover, scalable models help companies maintain cost-efficiency by reducing the need for manual intervention or frequent model retraining as data volume increases.
 
-
 **Integration:**
 
-- KNN’s simplicity makes it easier to integrate for basic applications or for systems with minimal computational capabilities.
+- KNN's simplicity makes it easier to integrate for basic applications or for systems with minimal computational capabilities.
     * **Example:** A small healthcare clinic could integrate KNN for simple predictive tasks like diagnosing basic diseases based on patient symptoms without requiring expensive computational resources.
-
----
 
 # Conclusion
 
@@ -593,3 +545,4 @@ While KNN outperforms Neural Networks in terms of training speed and prediction 
 On the other hand, Neural Networks offer a better balance of accuracy and scalability, making them well-suited for production environments dealing with larger and more complex datasets. Despite the longer training time, their ability to consistently improve performance as the dataset size increases makes them the more effective choice for applications requiring high precision and reliability.
 
 In summary, while KNN remains a valuable tool for certain use cases, Neural Networks stand out as the more robust and scalable option for tasks that demand accuracy and complexity handling, especially in production-level applications.
+
