@@ -14,10 +14,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from tensorflow import keras
+
 import pandas as pd
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.utils import plot_model
+
 
 # IPython specific imports
 from IPython.display import HTML
@@ -407,3 +409,4 @@ def create_comparison_table(knn_accuracy, knn_train_time, nn_accuracy, nn_train_
 if __name__ == "__main__":
     # Set rebuild_model=True to force retraining of models
     main(rebuild_model=True)
+
