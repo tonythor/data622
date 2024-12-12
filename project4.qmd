@@ -1,7 +1,7 @@
 ---
 title: "Project 4: MNIST using KNN and Neural Networks"
 author: "Team: I Love Lucy"
-date: "8 Dec 2024"
+date: "11 Dec 2024"
 output:
   html_document:
     toc: true
