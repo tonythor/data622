@@ -102,8 +102,8 @@ img {
 </style>
 
 <p style="text-align: center;">
-  Project 4 Github: [<a href="https://github.com/tonythor/data622/project4.qmd" target="_blank">Quarto Presentation</a>] &nbsp; 
-          [<a href="https://github.com/tonythor/data622/mnist.py" target="_blank">Python</a>] &nbsp; 
+  Project 4 Github: [<a href="https://github.com/tonythor/data622/blob/main/project4.qmd" target="_blank">Quarto Presentation</a>] &nbsp; 
+          [<a href="https://github.com/tonythor/data622/blob/main/lussi/mnist.py" target="_blank">Python</a>] &nbsp; 
    &nbsp; | &nbsp; 
   Projects: [<a href="https://rpubs.com/tonythor/data622-project4" target="_blank" >4</a>] &nbsp; 
   [<a href="https://rpubs.com/tonythor/data622-project3" target="_blank" >3</a>] &nbsp; 
@@ -113,7 +113,7 @@ img {
 
 ```{python initial}
 from IPython.display import display, HTML
-from lussi.mnist2 import *
+from lussi.mnist import *
 
 X_train, X_test, y_train, y_test, X_train_unscaled = load_data() 
 ```
